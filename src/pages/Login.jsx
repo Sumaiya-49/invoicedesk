@@ -1,139 +1,127 @@
 import { useState } from 'react';
 import { useApp } from '../store.jsx';
-import { Icon } from '../components/ui.jsx';
+import { Field, Icon, Segmented, inputCls, cx } from '../components/ui.jsx';
 import { STATES } from '../data/seed.js';
 
 const DEMO = { email: 'owner@sumaiyatraders.in', password: 'demo1234' };
 
-/** A rounded input with a hidden label (the placeholder shows what to type). */
-function NeonInput({ id, label, className = '', ...props }) {
-  return (
-    <div className={className}>
-      <label htmlFor={id} className="sr-only">{label}</label>
-      <input id={id} placeholder={label} className="neon-input" {...props} />
-    </div>
-  );
-}
-
-/** Animated GST graphics on both sides of the login (large screens only, decorative). */
-function SideGraphics() {
-  return (
-    <>
-      <div className="neon-side neon-side-left" aria-hidden="true">
-        {['₹', '₹', '₹', '₹', '₹', '₹'].map((r, i) => <span key={i} className={`neon-rupee neon-rupee-${i + 1}`}>{r}</span>)}
-        <div className="neon-invoice">
-          <div className="neon-invoice-head"><span>TAX INVOICE</span><b>INV-0014</b></div>
-          <div className="neon-invoice-meta">Chennai (33) → Chennai (33)</div>
-          {[['Steel Rod 12mm × 20', '₹13,000'], ['PVC Pipe × 10', '₹3,100'], ['Installation × 2', '₹3,000']].map(([k, v]) => (
-            <div key={k} className="neon-invoice-row"><span>{k}</span><span>{v}</span></div>
-          ))}
-          <div className="neon-invoice-line" />
-          <div className="neon-invoice-row neon-green"><span>CGST 9%</span><span>₹1,719</span></div>
-          <div className="neon-invoice-row neon-green"><span>SGST 9%</span><span>₹1,719</span></div>
-          <div className="neon-invoice-total"><span>Total</span><span>₹22,538</span></div>
-          <div className="neon-invoice-stamp">PAID</div>
-        </div>
-      </div>
-
-      <div className="neon-side neon-side-right" aria-hidden="true">
-        <span className="neon-tag neon-tag-1">IGST 18%</span>
-        <span className="neon-tag neon-tag-2">HSN 7214</span>
-        <span className="neon-tag neon-tag-3">CGST + SGST</span>
-        <svg className="neon-donut" viewBox="0 0 160 160">
-          <circle cx="80" cy="80" r="58" className="neon-donut-track" />
-          <circle cx="80" cy="80" r="58" className="neon-arc neon-arc-1" />
-          <circle cx="80" cy="80" r="58" className="neon-arc neon-arc-2" />
-          <circle cx="80" cy="80" r="58" className="neon-arc neon-arc-3" />
-          <text x="80" y="76" textAnchor="middle" className="neon-donut-label">GST</text>
-          <text x="80" y="98" textAnchor="middle" className="neon-donut-value">18%</text>
-        </svg>
-        <div className="neon-bars">
-          {[['Aug', 62], ['Sep', 88], ['Oct', 74], ['Nov', 96]].map(([m, h], i) => (
-            <div key={m} className="neon-bar-col">
-              <div className={`neon-bar neon-bar-${i + 1}`} style={{ height: `${h}%` }} />
-              <span>{m}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
+const FEATURES = [
+    ['rupee', 'GST worked out for you', 'CGST + SGST or IGST, picked from your customer’s state.'],
+    ['sparkle', 'An assistant that knows your books', 'Ask who owes you, or tell it to create an invoice.'],
+    ['chart', 'Profit and GST at a glance', 'Monthly P&L and GST payable, ready for your CA.'],
+];
 
 export function Login() {
-  const { a } = useApp();
-  const [mode, setMode] = useState('login');
-  const [busy, setBusy] = useState(false);
-  const [showPass, setShowPass] = useState(false);
-  const [f, setF] = useState({ email: '', password: '', ownerName: '', businessName: '', state: '33', gstin: '' });
-  const upd = (patch) => setF((x) => ({ ...x, ...patch }));
-  const signup = mode === 'signup';
+    const { a } = useApp();
+    const [mode, setMode] = useState('login');
+    const [busy, setBusy] = useState(false);
+    const [showPass, setShowPass] = useState(false);
+    const [f, setF] = useState({ email: '', password: '', ownerName: '', businessName: '', state: '33', gstin: '' });
+    const upd = (patch) => setF((x) => ({ ...x, ...patch }));
+    const signup = mode === 'signup';
 
-  const submit = async (e) => {
-    e.preventDefault();
-    setBusy(true);
-    if (signup) await a.signup({ ownerName: f.ownerName, businessName: f.businessName, email: f.email, password: f.password, state: f.state, gstin: f.gstin });
-    else await a.login(f.email, f.password);
-    setBusy(false);
-  };
+    const submit = async (e) => {
+        e.preventDefault();
+        setBusy(true);
+        if (signup) await a.signup({ ownerName: f.ownerName, businessName: f.businessName, email: f.email, password: f.password, state: f.state, gstin: f.gstin });
+        else await a.login(f.email, f.password);
+        setBusy(false);
+    };
 
-  return (
-    <div className="neon-page">
-      <SideGraphics />
-      <div className={`neon-stage ${signup ? 'neon-stage-wide' : ''}`}>
-        {/* Three glowing rings rotating at different speeds */}
-        <i className="neon-ring" style={{ '--c': '#ff3d7f' }} aria-hidden="true" />
-        <i className="neon-ring" style={{ '--c': '#3dff6e' }} aria-hidden="true" />
-        <i className="neon-ring" style={{ '--c': '#fff15c' }} aria-hidden="true" />
+    return (
+        <div className="grid min-h-screen bg-bg lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+            {/* Brand panel (large screens) */}
+            <aside className="relative hidden flex-col overflow-hidden bg-side px-12 py-12 text-white lg:flex">
+                <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-accent/25 blur-3xl" aria-hidden="true" />
+                <div className="relative flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-ink"><Icon name="rupee" size={22} stroke={2.4} /></div>
+                    <span className="font-display text-2xl font-bold">InvoiceDesk</span>
+                </div>
 
-        <form className="neon-form" onSubmit={submit}>
-          <div className="neon-brand">
-            <span className="neon-brand-icon"><Icon name="rupee" size={20} stroke={2.4} /></span>
-            InvoiceDesk
-          </div>
-          <div className="text-center">
-            <h1 className="font-display text-3xl font-medium text-white">{signup ? 'Sign up' : 'Login'}</h1>
-            <p className="mt-1.5 text-sm text-white/55">GST invoicing with an AI assistant</p>
-          </div>
+                <div className="relative my-auto flex max-w-md flex-col gap-10">
+                    <h1 className="font-display text-[44px] font-semibold leading-[1.08] text-balance">GST invoicing that answers back.</h1>
+                    <ul className="flex flex-col gap-6">
+                        {FEATURES.map(([icon, title, body]) => (
+                            <li key={title} className="flex gap-4">
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#9FD8BF]"><Icon name={icon} size={19} /></span>
+                                <span>
+                  <span className="block font-semibold">{title}</span>
+                  <span className="mt-0.5 block text-sm leading-relaxed text-side-ink">{body}</span>
+                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </aside>
 
-          {signup && (
-            <div className="grid gap-3.5 sm:grid-cols-2">
-              <NeonInput id="su-name" label="Your name" required autoComplete="name" value={f.ownerName} onChange={(e) => upd({ ownerName: e.target.value })} />
-              <NeonInput id="su-biz" label="Business name" required autoComplete="organization" value={f.businessName} onChange={(e) => upd({ businessName: e.target.value })} />
-              <div>
-                <label htmlFor="su-state" className="sr-only">State</label>
-                <select id="su-state" className="neon-input" value={f.state} onChange={(e) => upd({ state: e.target.value })}>
-                  {STATES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
-                </select>
-              </div>
-              <NeonInput id="su-gstin" label="GSTIN (optional)" maxLength={15} value={f.gstin} onChange={(e) => upd({ gstin: e.target.value.toUpperCase() })} />
-            </div>
-          )}
+            {/* Form */}
+            <main className="gutter flex items-center justify-center py-10">
+                <div className="flex w-full max-w-[420px] flex-col gap-7">
+                    <div className="flex items-center gap-2.5 lg:hidden">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-accent-ink"><Icon name="rupee" size={20} stroke={2.4} /></div>
+                        <span className="font-display text-xl font-bold">InvoiceDesk</span>
+                    </div>
 
-          <NeonInput id="login-email" label="Email" type="email" required autoComplete="email" value={f.email} onChange={(e) => upd({ email: e.target.value })} />
-          <div className="relative">
-            <NeonInput id="login-pass" label={signup ? 'Password (6+ characters)' : 'Password'} type={showPass ? 'text' : 'password'} required
-              autoComplete={signup ? 'new-password' : 'current-password'} value={f.password} onChange={(e) => upd({ password: e.target.value })} />
-            <button type="button" onClick={() => setShowPass((v) => !v)} aria-pressed={showPass}
-              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full px-2 py-1 text-xs font-semibold text-white/60 hover:text-white cursor-pointer">
-              {showPass ? 'Hide' : 'Show'}
-            </button>
-          </div>
+                    <div>
+                        <h2 className="font-display text-3xl font-semibold text-balance">{signup ? 'Create your account' : 'Welcome back'}</h2>
+                        <p className="mt-2 text-[15px] text-muted">{signup ? 'Set up your business once. Your state decides how GST is charged.' : 'Log in to see your invoices, payments and reports.'}</p>
+                    </div>
 
-          <button type="submit" disabled={busy} className="neon-button">
-            {busy ? 'Please wait…' : signup ? 'Create account' : 'Sign in'}
-          </button>
+                    <Segmented label="Log in or sign up" value={mode} onChange={setMode} options={[['login', 'Log in'], ['signup', 'Sign up']]} className="w-full" stretch />
 
-          <div className="flex items-center justify-between gap-3 px-1 text-sm">
-            {!signup
-              ? <button type="button" onClick={() => upd(DEMO)} className="text-white/75 hover:text-white cursor-pointer">Use demo account</button>
-              : <span className="text-white/60">Have an account?</span>}
-            <button type="button" onClick={() => setMode(signup ? 'login' : 'signup')} className="font-semibold text-white/90 hover:text-[#3dff6e] cursor-pointer">
-              {signup ? 'Login' : 'Signup'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+                    <form className="flex flex-col gap-4" onSubmit={submit}>
+                        {signup && (
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <Field label="Your name" id="su-name"><input id="su-name" className={inputCls} required autoComplete="name" value={f.ownerName} onChange={(e) => upd({ ownerName: e.target.value })} /></Field>
+                                <Field label="Business name" id="su-biz"><input id="su-biz" className={inputCls} required autoComplete="organization" value={f.businessName} onChange={(e) => upd({ businessName: e.target.value })} /></Field>
+                                <Field label="State" id="su-state">
+                                    <select id="su-state" className={inputCls} value={f.state} onChange={(e) => upd({ state: e.target.value })}>
+                                        {STATES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+                                    </select>
+                                </Field>
+                                <Field label="GSTIN (optional)" id="su-gstin">
+                                    <input id="su-gstin" className={cx(inputCls, 'uppercase tabular-nums')} maxLength={15} placeholder="33AAACS1111A1Z3" value={f.gstin} onChange={(e) => upd({ gstin: e.target.value.toUpperCase() })} />
+                                </Field>
+                            </div>
+                        )}
+                        <Field label="Email" id="login-email">
+                            <input id="login-email" type="email" required autoComplete="email" placeholder="you@business.in" className={inputCls} value={f.email} onChange={(e) => upd({ email: e.target.value })} />
+                        </Field>
+                        <Field label="Password" id="login-pass" hint={signup ? 'At least 6 characters.' : undefined}>
+                            <div className="relative">
+                                <input id="login-pass" type={showPass ? 'text' : 'password'} required autoComplete={signup ? 'new-password' : 'current-password'}
+                                       className={cx(inputCls, 'pr-16')} value={f.password} onChange={(e) => upd({ password: e.target.value })} />
+                                <button type="button" onClick={() => setShowPass((v) => !v)} aria-pressed={showPass}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-muted hover:text-ink cursor-pointer">
+                                    {showPass ? 'Hide' : 'Show'}
+                                </button>
+                            </div>
+                        </Field>
+                        <button type="submit" disabled={busy}
+                                className="mt-1 inline-flex h-12 items-center justify-center rounded-xl bg-accent px-4 text-[15px] font-semibold text-accent-ink shadow-sm hover:brightness-110 disabled:opacity-60 cursor-pointer">
+                            {busy ? 'Please wait…' : signup ? 'Create account' : 'Log in'}
+                        </button>
+                    </form>
+
+                    {!signup && (
+                        <div className="flex items-center gap-3 rounded-xl border border-dashed border-line px-4 py-3">
+                            <Icon name="lock" size={16} className="text-muted" />
+                            <div className="min-w-0 flex-1 text-[13px] leading-snug">
+                                <div className="font-semibold">Trying it out?</div>
+                                <div className="truncate text-muted">{DEMO.email} · {DEMO.password}</div>
+                            </div>
+                            <button type="button" onClick={() => upd(DEMO)} className="shrink-0 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold text-accent hover:bg-accent-soft cursor-pointer">Fill in</button>
+                        </div>
+                    )}
+
+                    <p className="text-center text-sm text-muted">
+                        {signup ? 'Already have an account? ' : 'New to InvoiceDesk? '}
+                        <button type="button" onClick={() => setMode(signup ? 'login' : 'signup')} className="font-semibold text-accent hover:underline cursor-pointer">
+                            {signup ? 'Log in' : 'Create an account'}
+                        </button>
+                    </p>
+                </div>
+            </main>
+        </div>
+    );
 }
