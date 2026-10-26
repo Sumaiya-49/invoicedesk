@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { STATUS } from '../lib/derive.js';
 import { fdateTime } from '../lib/format.js';
 
@@ -50,21 +50,19 @@ export function Icon({ name, size = 18, className = '', stroke = 2 }) {
 
 // ------------------------------------------------------------------ buttons
 const BTN = {
-  primary: 'fx-btn-primary font-bold',
-  secondary: 'fx-btn-secondary bg-surface/60 text-ink border-[1.5px] border-white/15',
-  ghost: 'text-ink hover:bg-white/5 hover:text-accent',
-  danger: 'fx-btn-danger bg-transparent text-danger border-[1.5px] border-danger/40',
-  soft: 'fx-btn-soft bg-accent-soft text-accent border border-accent/30',
-  confirm: 'fx-btn-soft bg-[#3DFF6E] text-[#06210F] font-bold shadow-[0_0_14px_rgba(61,255,110,.5)]',
+  primary: 'bg-accent text-accent-ink hover:brightness-110 shadow-sm',
+  secondary: 'bg-surface text-ink border border-line hover:bg-sunken',
+  ghost: 'text-ink hover:bg-sunken',
+  danger: 'bg-surface text-danger border border-line hover:bg-danger-soft',
+  soft: 'bg-accent-soft text-accent hover:brightness-95',
+  confirm: 'bg-accent text-accent-ink hover:brightness-110 shadow-sm',
 };
-// Icons that spin a little on hover
-const SPIN = new Set(['plus', 'sparkle', 'convert']);
 export function Button({ variant = 'secondary', size = 'md', icon, children, className = '', ...rest }) {
   return (
     <button type="button" {...rest}
-      className={cx('fx-btn inline-flex items-center justify-center gap-2 rounded-full font-semibold whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer',
-        size === 'sm' ? 'h-9 px-3.5 text-[13px]' : 'h-10 px-[18px] text-sm', BTN[variant], className)}>
-      {icon && <Icon name={icon} size={size === 'sm' ? 15 : 17} className={SPIN.has(icon) ? 'fx-spin' : ''} />}
+      className={cx('inline-flex items-center justify-center gap-2 rounded-xl font-semibold whitespace-nowrap transition-[background,filter] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer',
+        size === 'sm' ? 'h-9 px-3 text-[13px]' : 'h-10 px-4 text-sm', BTN[variant], className)}>
+      {icon && <Icon name={icon} size={size === 'sm' ? 15 : 17} />}
       {children}
     </button>
   );
@@ -72,8 +70,8 @@ export function Button({ variant = 'secondary', size = 'md', icon, children, cla
 export function IconButton({ icon, label, onClick, tone = 'default', className = '' }) {
   return (
     <button type="button" onClick={onClick} aria-label={label} title={label}
-      className={cx('fx-icon-btn inline-flex h-8 w-8 items-center justify-center rounded-xl border border-transparent transition-all cursor-pointer',
-        tone === 'danger' ? 'text-muted hover:border-danger/50 hover:bg-danger-soft hover:text-danger' : 'text-muted hover:border-accent/50 hover:bg-accent-soft hover:text-accent', className)}>
+      className={cx('inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors cursor-pointer',
+        tone === 'danger' ? 'text-muted hover:bg-danger-soft hover:text-danger' : 'text-muted hover:bg-sunken hover:text-ink', className)}>
       <Icon name={icon} size={17} />
     </button>
   );
@@ -82,14 +80,14 @@ export function IconButton({ icon, label, onClick, tone = 'default', className =
 // ------------------------------------------------------------------ badges
 export function StatusPill({ status }) {
   const [label, cls] = STATUS[status] || STATUS.draft;
-  return <span className={cx('fx-pill inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap', status === 'overdue' && 'fx-pill-blink', cls)}>
-    <span className="fx-pill-dot h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />{label}
+  return <span className={cx('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap', cls)}>
+    <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />{label}
   </span>;
 }
 export function TypeBadge({ type, long = false }) {
   const intra = type === 'INTRA';
   return (
-    <span className={cx('inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold whitespace-nowrap', intra ? 'border-accent/25 bg-accent-soft text-accent' : 'border-info/25 bg-info-soft text-info')}>
+    <span className={cx('inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold whitespace-nowrap', intra ? 'bg-accent-soft text-accent' : 'bg-info-soft text-info')}>
       {intra ? (long ? 'Intra-state · CGST + SGST' : 'CGST + SGST') : (long ? 'Inter-state · IGST' : 'IGST')}
     </span>
   );
@@ -97,7 +95,7 @@ export function TypeBadge({ type, long = false }) {
 
 // ------------------------------------------------------------------ layout bits
 export function Card({ className = '', children, ...rest }) {
-  return <section {...rest} className={cx('fx-card rounded-[20px] border border-line bg-surface/90', className)}>{children}</section>;
+  return <section {...rest} className={cx('rounded-2xl border border-line bg-surface', className)}>{children}</section>;
 }
 export function SectionHead({ title, sub, children }) {
   return (
@@ -111,25 +109,12 @@ export function SectionHead({ title, sub, children }) {
   );
 }
 export function Segmented({ options, value, onChange, label, className = '', stretch = false }) {
-  // A white pill slides under the selected option (position measured from the button)
-  const box = useRef(null);
-  const [thumb, setThumb] = useState(null);
-  useLayoutEffect(() => {
-    const measure = () => {
-      const on = box.current?.querySelector('[aria-checked="true"]');
-      setThumb(on ? { left: on.offsetLeft, width: on.offsetWidth, top: on.offsetTop, height: on.offsetHeight } : null);
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [value, options.length]);
   return (
-    <div ref={box} role="radiogroup" aria-label={label} className={cx('fx-scroll-x relative inline-flex max-w-full shrink-0 flex-nowrap gap-1 self-start rounded-full border border-white/15 p-1', className)}>
-      {thumb && <span className="fx-thumb" style={{ left: thumb.left, width: thumb.width, top: thumb.top, height: thumb.height }} aria-hidden="true" />}
+    <div role="radiogroup" aria-label={label} className={cx('scroll-x inline-flex max-w-full shrink-0 flex-nowrap gap-1 self-start rounded-xl bg-sunken p-1', className)}>
       {options.map(([v, text, extra]) => (
         <button key={String(v)} type="button" role="radio" aria-checked={value === v} onClick={() => onChange(v)}
-          className={cx('relative h-8 shrink-0 whitespace-nowrap rounded-full px-3.5 text-[13px] font-semibold transition-colors duration-300 cursor-pointer', stretch && 'flex-1',
-            value === v ? 'text-[#111]' : 'text-muted hover:text-ink')}>
+          className={cx('h-8 shrink-0 whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold transition-colors cursor-pointer', stretch && 'flex-1',
+            value === v ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink')}>
           {text}{extra != null && <span className="ml-1.5 tabular-nums opacity-70">{extra}</span>}
         </button>
       ))}
@@ -137,7 +122,7 @@ export function Segmented({ options, value, onChange, label, className = '', str
   );
 }
 
-export const inputCls = 'fx-input h-10 w-full rounded-xl border-[1.5px] border-white/12 bg-white/[.03] px-3 text-sm text-ink placeholder:text-muted focus:outline-none';
+export const inputCls = 'h-10 w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25';
 export function Field({ label, id, hint, children, className = '' }) {
   return (
     <div className={cx('flex min-w-0 flex-col gap-1.5', className)}>
@@ -155,15 +140,15 @@ export function Modal({ title, onClose, children, footer, wide = false }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
   return (
-    <div className="fx-scrim fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div role="dialog" aria-modal="true" aria-label={title}
-        className={cx('fx-dialog flex max-h-[90%] w-full flex-col overflow-hidden rounded-[22px] border border-white/10 bg-[#121215]', wide ? 'max-w-2xl' : 'max-w-md')}>
+        className={cx('flex max-h-[90%] w-full flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl', wide ? 'max-w-2xl' : 'max-w-md')}>
         <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
           <h2 className="font-display text-lg font-semibold">{title}</h2>
           <IconButton icon="close" label="Close" onClick={onClose} />
         </div>
         <div className="overflow-y-auto px-5 py-4">{children}</div>
-        {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-line bg-black/20 px-5 py-3">{footer}</div>}
+        {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-line bg-sunken/50 px-5 py-3">{footer}</div>}
       </div>
     </div>
   );
@@ -172,7 +157,7 @@ export function Modal({ title, onClose, children, footer, wide = false }) {
 export function Empty({ icon = 'invoice', title, body, action }) {
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/30 bg-accent-soft text-accent shadow-[0_0_18px_rgba(61,255,110,.25)]"><Icon name={icon} size={22} /></div>
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sunken text-muted"><Icon name={icon} size={22} /></div>
       <div>
         <p className="font-semibold text-ink">{title}</p>
         {body && <p className="mt-1 max-w-sm text-sm text-muted">{body}</p>}
@@ -183,11 +168,12 @@ export function Empty({ icon = 'invoice', title, body, action }) {
 }
 
 export const Th = ({ children, right, className = '' }) => (
-  <th scope="col" className={cx('fx-th whitespace-nowrap border-b border-line bg-white/[.02] px-3 py-3 font-semibold text-muted first:pl-5 last:pr-5', right ? 'text-right' : 'text-left', className)}>{children}</th>
+  <th scope="col" className={cx('whitespace-nowrap border-b border-line bg-sunken/60 px-4 py-2.5 text-xs font-semibold text-muted', right ? 'text-right' : 'text-left', className)}>{children}</th>
 );
 export const Td = ({ children, right, className = '', ...rest }) => (
-  <td {...rest} className={cx('whitespace-nowrap border-b border-line/70 px-3 py-3.5 text-sm first:pl-5 last:pr-5', right && 'text-right tabular-nums', className)}>{children}</td>
+  <td {...rest} className={cx('whitespace-nowrap border-b border-line/70 px-4 py-3 text-sm', right && 'text-right tabular-nums', className)}>{children}</td>
 );
+
 
 // ------------------------------------------------------------------ phone lists (used instead of tables on small screens)
 export function MobileList({ children, className = '' }) {
@@ -196,7 +182,7 @@ export function MobileList({ children, className = '' }) {
 /** One record as a card row: title + amount on top, details below, then tags and action buttons. */
 export function MobileRow({ title, onOpen, sub, value, valueClass = '', valueSub, meta, actions, children }) {
   return (
-    <li className="fx-mrow flex flex-col gap-2 px-4 py-3.5">
+    <li className="flex flex-col gap-2 px-4 py-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           {onOpen
@@ -225,5 +211,5 @@ export function MobileRow({ title, onOpen, sub, value, valueClass = '', valueSub
 /** Small "Edited 24 Oct 2026, 7:06 pm" line, shown when a record was changed after it was created. */
 export function EditedAt({ at, className = '' }) {
   if (!at) return null;
-  return <div className={cx('flex items-center gap-1 text-[11px] font-medium text-accent/85', className)}><Icon name="edit" size={10} />Edited {fdateTime(at)}</div>;
+  return <div className={cx('flex items-center gap-1 text-[11px] text-muted', className)}><Icon name="edit" size={10} />Edited {fdateTime(at)}</div>;
 }
