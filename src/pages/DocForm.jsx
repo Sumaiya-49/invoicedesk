@@ -33,7 +33,7 @@ export function DocForm() {
   );
 
   return (
-    <div className="fx-page grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex min-w-0 flex-col gap-6">
         <Card className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Customer" id="f-cust" className="sm:col-span-2">
@@ -93,14 +93,14 @@ export function DocForm() {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="text-left text-xs font-semibold text-muted">
-                  <th className="border-b border-line bg-white/[.02] px-4 py-3">Product or service</th>
-                  <th className="border-b border-line bg-white/[.02] px-2 py-3 text-right">Qty</th>
-                  <th className="border-b border-line bg-white/[.02] px-2 py-3 text-right">Rate (₹)</th>
-                  <th className="border-b border-line bg-white/[.02] px-2 py-3 text-right">Disc %</th>
-                  <th className="border-b border-line bg-white/[.02] px-2 py-3 text-right">GST %</th>
-                  <th className="border-b border-line bg-white/[.02] px-2 py-3 text-right">{intra ? 'CGST + SGST' : 'IGST'}</th>
-                  <th className="border-b border-line bg-white/[.02] px-4 py-3 text-right">Amount</th>
-                  <th className="border-b border-line bg-white/[.02] px-2 py-3"><span className="sr-only">Remove</span></th>
+                  <th className="border-b border-line bg-sunken/60 px-4 py-3">Product or service</th>
+                  <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">Qty</th>
+                  <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">Rate (₹)</th>
+                  <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">Disc %</th>
+                  <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">GST %</th>
+                  <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">{intra ? 'CGST + SGST' : 'IGST'}</th>
+                  <th className="border-b border-line bg-sunken/60 px-4 py-3 text-right">Amount</th>
+                  <th className="border-b border-line bg-sunken/60 px-2 py-3"><span className="sr-only">Remove</span></th>
                 </tr>
               </thead>
               <tbody>

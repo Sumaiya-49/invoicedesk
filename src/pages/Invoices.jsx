@@ -27,7 +27,7 @@ export function Invoices() {
   );
 
   return (
-    <div className="fx-page flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <Segmented label="Filter invoices" value={s.invFilter} onChange={(v) => a.set({ invFilter: v })}
           options={[['all', 'All'], ['unpaid', 'Unpaid'], ['overdue', 'Overdue'], ['paid', 'Paid'], ['draft', 'Drafts']].map(([k, l]) => [k, l, d.invs.filter(FILTERS[k]).length])} />
@@ -36,7 +36,7 @@ export function Invoices() {
             <span className="sr-only">Search invoices</span>
             <Icon name="search" size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
             <input id="inv-search" type="search" value={s.invSearch} onChange={(e) => a.set({ invSearch: e.target.value })} placeholder="Search"
-              className="fx-input h-10 w-full rounded-full border-[1.5px] border-white/15 bg-transparent pl-9 pr-3 text-sm text-ink focus:outline-none" />
+              className="h-10 w-full rounded-xl border border-line bg-surface pl-9 pr-3 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25" />
           </label>
           <Button icon="download" onClick={() => a.exportData('invoices', 'csv')}>CSV</Button>
           <Button icon="download" onClick={() => a.exportData('invoices', 'excel')}>Excel</Button>
@@ -61,7 +61,7 @@ export function Invoices() {
               </thead>
               <tbody>
                 {rows.map((i) => (
-                  <tr key={i.no} className="group fx-row">
+                  <tr key={i.no} className="hover:bg-sunken/50">
                     <Td>
                       <button type="button" onClick={() => a.viewInvoice(i.no)} className="font-semibold tabular-nums text-ink hover:text-accent cursor-pointer">{i.no}</button>
                       <div className="text-xs text-muted">{fdate(i.date)}</div>
@@ -104,7 +104,7 @@ export function Quotes() {
   const invoiceLink = (q) => q.invoiceNo && <button type="button" onClick={() => a.viewInvoice(q.invoiceNo)} className="text-xs font-semibold text-accent hover:underline cursor-pointer">{q.invoiceNo}</button>;
 
   return (
-    <div className="fx-page flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-xl text-sm text-muted">Quotations don’t count as sales or GST until you convert them. Converting copies the items and prices into a new invoice.</p>
         <Button variant="primary" icon="plus" onClick={a.newQuote}>New quotation</Button>
@@ -124,7 +124,7 @@ export function Quotes() {
               <thead><tr><Th>Quotation</Th><Th>Customer</Th><Th>Valid until</Th><Th>GST type</Th><Th right>Total</Th><Th>Status</Th><Th right><span className="sr-only">Actions</span></Th></tr></thead>
               <tbody>
                 {d.quotes.map((q) => (
-                  <tr key={q.no} className="fx-row">
+                  <tr key={q.no} className="hover:bg-sunken/50">
                     <Td><span className="font-semibold tabular-nums">{q.no}</span><div className="text-xs text-muted">{fdate(q.date)}</div><EditedAt at={q.updatedAt} /></Td>
                     <Td><div className="font-medium">{q.c.name}</div><div className="text-xs text-muted">{q.items.length} item{q.items.length > 1 ? 's' : ''}</div></Td>
                     <Td className={q.ds === 'expired' ? 'text-danger' : 'text-muted'}>{fdate(q.valid)}</Td>

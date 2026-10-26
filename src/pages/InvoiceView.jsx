@@ -21,7 +21,7 @@ export function InvoiceView() {
   ].sort((x, y) => ((x.at || x.date) < (y.at || y.date) ? -1 : 1));
 
   return (
-    <div className="fx-page flex flex-col gap-5">
+    <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button size="sm" variant="ghost" icon="arrowLeft" onClick={() => a.go('invoices')}>Invoices</Button>
@@ -52,7 +52,7 @@ export function InvoiceView() {
               <Row k="Paid" v={'− ' + inr(inv.paidAmt)} />
               <Row k="Due date" v={fdate(inv.due)} />
             </div>
-            <div className="mt-4 flex flex-col gap-1 border-t border-dashed border-white/15 pt-3 text-xs text-muted">
+            <div className="mt-4 flex flex-col gap-1 border-t border-dashed border-line pt-3 text-xs text-muted">
               <div>Created {fdateTime(inv.createdAt)}</div>
               {edited && <div className="font-semibold text-accent">Last edited {fdateTime(inv.updatedAt)}</div>}
             </div>

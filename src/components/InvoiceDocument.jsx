@@ -17,7 +17,7 @@ export function InvoiceDocument({ inv, seller, settings, title = 'Tax invoice', 
       style={modern ? { background: '#ffffff', color: accent } : { background: accent, color: '#ffffff' }}>{initials(seller.name)}</div>;
 
   return (
-    <article className="doc fx-paper overflow-hidden rounded-2xl border border-[#E2E6E2] bg-white text-[#16201B]" aria-label={`${title} ${inv.no}`}>
+    <article className="doc overflow-hidden rounded-2xl border border-[#E2E6E2] bg-white text-[#16201B]" aria-label={`${title} ${inv.no}`}>
       <header className={cx('flex flex-wrap items-start justify-between gap-6', pad, modern ? 'text-white' : 'border-b-4')}
         style={modern ? { background: accent } : { borderColor: accent }}>
         <div className="flex items-start gap-4">

@@ -21,7 +21,7 @@ export function CreditNotes() {
   const preview = inv && line ? d.calc({ custId: inv.custId, override: inv.type, items: [{ ...line, qty: Number(qty) || 0, disc: 0 }] }) : null;
 
   return (
-    <div className="fx-page grid items-start gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="grid items-start gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
       <Card className="flex flex-col gap-4 p-5">
         <SectionHead title="Issue a credit note" sub="For returns, short supply or overcharging. It reduces what the customer owes and your GST." />
         <Field label="Against invoice" id="cn-inv">
@@ -66,7 +66,7 @@ export function CreditNotes() {
             <thead><tr><Th>Credit note</Th><Th>Against</Th><Th>Item</Th><Th>Reason</Th><Th right>Taxable</Th><Th right>GST</Th><Th right>Total</Th><Th right><span className="sr-only">Actions</span></Th></tr></thead>
             <tbody>
               {d.cns.map((c) => (
-                <tr key={c.no} className="fx-row">
+                <tr key={c.no} className="hover:bg-sunken/50">
                   <Td><span className="font-semibold tabular-nums">{c.no}</span><div className="text-xs text-muted">{fdate(c.date)}</div></Td>
                   <Td><button type="button" onClick={() => a.viewInvoice(c.invNo)} className="font-semibold text-accent hover:underline cursor-pointer tabular-nums">{c.invNo}</button><div className="text-xs text-muted">{c.c.name}</div></Td>
                   <Td className="!whitespace-normal">{c.item.name}<div className="text-xs text-muted tabular-nums">{c.qty} {c.item.unit}</div></Td>
@@ -99,7 +99,7 @@ export function Customers() {
     </>
   );
   return (
-    <div className="fx-page flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-xl text-sm text-muted">GST type is worked out by comparing each customer’s state with yours. The first two digits of a GSTIN are its state code.</p>
         <Button variant="primary" icon="plus" onClick={() => a.set({ modal: { type: 'customer', data: { name: '', city: '', state: seller.state, gstin: '', email: '', phone: '' } } })}>Add customer</Button>
@@ -125,7 +125,7 @@ export function Customers() {
                 const mine = d.invs.filter((i) => i.custId === c.id);
                 const owed = r2(mine.reduce((x, i) => x + i.balance, 0));
                 return (
-                  <tr key={c.id} className="fx-row">
+                  <tr key={c.id} className="hover:bg-sunken/50">
                     <Td><div className="font-semibold">{c.name}</div><div className="text-xs text-muted">{c.email}</div><EditedAt at={c.updatedAt} /></Td>
                     <Td className="tabular-nums">{c.gstin || <span className="text-muted">Unregistered</span>}</Td>
                     <Td>{c.stateName} <span className="text-muted tabular-nums">({c.state})</span><div className="text-xs text-muted">{c.city}</div></Td>
@@ -156,7 +156,7 @@ export function Products() {
     </>
   );
   return (
-    <div className="fx-page flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-xl text-sm text-muted">Prices are before GST. Goods use an HSN code and services a SAC code; both print on the invoice.</p>
         <Button variant="primary" icon="plus" onClick={() => a.set({ modal: { type: 'product', data: { name: '', hsn: '', unit: 'Nos', rate: '', gst: 18 } } })}>Add product</Button>
@@ -175,7 +175,7 @@ export function Products() {
             <thead><tr><Th>Name</Th><Th>HSN/SAC</Th><Th>Unit</Th><Th right>Price</Th><Th right>GST rate</Th><Th right><span className="sr-only">Actions</span></Th></tr></thead>
             <tbody>
               {s.products.map((p) => (
-                <tr key={p.id} className="fx-row">
+                <tr key={p.id} className="hover:bg-sunken/50">
                   <Td className="font-semibold">{p.name}<EditedAt at={p.updatedAt} /></Td>
                   <Td className="tabular-nums">{p.hsn}</Td>
                   <Td className="text-muted">{p.unit}</Td>
@@ -235,8 +235,8 @@ export function Expenses() {
   );
 
   return (
-    <div className="fx-page flex flex-col gap-6">
-      <Card className={cx('p-5', editingId && 'border-accent/50 shadow-[0_0_24px_rgba(61,255,110,.15)]')}>
+    <div className="flex flex-col gap-6">
+      <Card className={cx('p-5', editingId && 'border-accent')}>
         <SectionHead title={editingId ? 'Edit expense' : 'Add an expense'} sub="Enter the amount before GST. GST you pay on business purchases is input tax credit, which lowers your GST payable." />
         <form className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[150px_180px_minmax(0,1fr)_140px_110px_auto] lg:items-end"
           onSubmit={(ev) => { ev.preventDefault(); save(); }}>
@@ -273,11 +273,11 @@ export function Expenses() {
             </Field>
             {filtered && <Button variant="ghost" onClick={() => { setCat('all'); setMonth('all'); setQ(''); }}>Clear filters</Button>}
           </div>
-          <div className="fx-scroll-x -mx-4 flex gap-1.5 px-4 sm:mx-0 sm:flex-wrap sm:px-0" role="radiogroup" aria-label="Filter by category">
+          <div className="scroll-x -mx-4 flex gap-1.5 px-4 sm:mx-0 sm:flex-wrap sm:px-0" role="radiogroup" aria-label="Filter by category">
             {['all', ...EXPENSE_CATEGORIES].map((c) => (
               <button key={c} type="button" role="radio" aria-checked={cat === c} onClick={() => setCat(c)}
-                className={cx('h-8 shrink-0 whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold transition-all cursor-pointer',
-                  cat === c ? 'border-accent bg-accent text-accent-ink shadow-[0_0_14px_rgba(61,255,110,.45)]' : 'border-white/15 bg-transparent text-ink hover:border-accent hover:text-accent')}>
+                className={cx('h-8 shrink-0 whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold transition-colors cursor-pointer',
+                  cat === c ? 'border-accent bg-accent text-accent-ink' : 'border-line bg-surface text-ink hover:border-accent hover:text-accent')}>
                 {c === 'all' ? 'All categories' : c}<span className="ml-1.5 tabular-nums opacity-70">{countIn(c)}</span>
               </button>
             ))}
@@ -305,7 +305,7 @@ export function Expenses() {
                 <thead><tr><Th>Date</Th><Th>Category</Th><Th>Paid to</Th><Th right>Amount</Th><Th right>GST credit</Th><Th right><span className="sr-only">Actions</span></Th></tr></thead>
                 <tbody>
                   {list.map((x) => (
-                    <tr key={x.id} className="fx-row">
+                    <tr key={x.id} className="hover:bg-sunken/50">
                       <Td className="text-muted">{fdate(x.date)}</Td>
                       <Td><span className="rounded-md bg-sunken px-2 py-0.5 text-xs font-semibold">{x.category}</span></Td>
                       <Td className="!whitespace-normal">{x.vendor}<EditedAt at={x.updatedAt} /></Td>
@@ -340,7 +340,7 @@ export function Expenses() {
                 <button type="button" onClick={() => setCat(cat === c ? 'all' : c)} aria-pressed={cat === c}
                   className={cx('w-full rounded-lg px-2 py-2 text-left text-sm transition-colors cursor-pointer', cat === c ? 'bg-accent-soft' : 'hover:bg-sunken')}>
                   <div className="flex justify-between gap-2"><span className={cat === c ? 'font-semibold' : ''}>{c}</span><span className="tabular-nums font-medium">{inr(v)}</span></div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-sunken"><div className="h-full rounded-full bg-saffron shadow-[0_0_10px_#FF3D7F]" style={{ width: `${periodTotal ? (v / periodTotal) * 100 : 0}%` }} /></div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-sunken"><div className="h-full rounded-full bg-saffron" style={{ width: `${periodTotal ? (v / periodTotal) * 100 : 0}%` }} /></div>
                 </button>
               </li>
             ))}

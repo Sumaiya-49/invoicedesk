@@ -23,7 +23,7 @@ export function Reports() {
   );
 
   return (
-    <div className="fx-page flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <Card className="min-w-0 overflow-hidden">
         <div className="p-5 pb-3">
           <SectionHead title="Profit and loss" sub="Net sales (before GST, after credit notes) minus expenses (before GST). GST is collected for the government, so it isn’t income.">
@@ -34,7 +34,7 @@ export function Reports() {
         {phone ? (
           <MobileList>
             {cols.map((c) => (
-              <MobileRow key={c.label} title={c.label} value={`${c.x.profit < 0 ? '− ' : ''}${inr(Math.abs(c.x.profit))}`} valueClass={cx('fx-glow', c.x.profit < 0 ? 'text-danger' : 'text-ok')} valueSub={c.x.profit < 0 ? 'net loss' : 'net profit'}>
+              <MobileRow key={c.label} title={c.label} value={`${c.x.profit < 0 ? '− ' : ''}${inr(Math.abs(c.x.profit))}`} valueClass={c.x.profit < 0 ? 'text-danger' : 'text-ok'} valueSub={c.x.profit < 0 ? 'net loss' : 'net profit'}>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1 rounded-xl bg-sunken/70 px-3 py-2.5 text-xs tabular-nums">
                   <dt className="text-muted">Sales</dt><dd className="text-right">{inr(c.x.sales)}</dd>
                   <dt className="text-muted">Credit notes</dt><dd className="text-right">{c.x.creditTaxable ? '− ' : ''}{inr(c.x.creditTaxable)}</dd>
@@ -70,7 +70,7 @@ export function Reports() {
           {phone ? (
             <MobileList>
               {m.map((x) => (
-                <MobileRow key={x.key} title={monthLabel(x.key)} sub={<>Output GST {inr(x.outGst)}<br />Input credit − {inr(x.inGst)}</>} value={inr(x.gstPayable)} valueClass="fx-glow text-info" valueSub="net payable" />
+                <MobileRow key={x.key} title={monthLabel(x.key)} sub={<>Output GST {inr(x.outGst)}<br />Input credit − {inr(x.inGst)}</>} value={inr(x.gstPayable)} valueClass="text-info" valueSub="net payable" />
               ))}
             </MobileList>
           ) : (
@@ -79,7 +79,7 @@ export function Reports() {
               <thead><tr><Th>Month</Th><Th right>Output GST</Th><Th right>Input credit</Th><Th right>Net payable</Th></tr></thead>
               <tbody className="tabular-nums">
                 {m.map((x) => (
-                  <tr key={x.key} className="fx-row"><Td>{monthLabel(x.key)}</Td><Td right>{inr(x.outGst)}</Td><Td right className="text-muted">− {inr(x.inGst)}</Td><Td right className="font-semibold">{inr(x.gstPayable)}</Td></tr>
+                  <tr key={x.key} className="hover:bg-sunken/50"><Td>{monthLabel(x.key)}</Td><Td right>{inr(x.outGst)}</Td><Td right className="text-muted">− {inr(x.inGst)}</Td><Td right className="font-semibold">{inr(x.gstPayable)}</Td></tr>
                 ))}
               </tbody>
             </table>
@@ -122,7 +122,7 @@ export function Settings() {
   };
 
   return (
-    <div className="fx-page grid items-start gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+    <div className="grid items-start gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
       <Card className="flex flex-col gap-5 p-5">
         <SectionHead title="Invoice template" sub="Applies to invoices, quotations and their PDFs." />
         <div className="flex items-center gap-4">
@@ -130,7 +130,7 @@ export function Settings() {
             {st.logo ? <img src={st.logo} alt="Your logo" className="h-full w-full object-contain" /> : <Icon name="upload" size={20} className="text-muted" />}
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="logo-file" className="fx-btn fx-btn-secondary inline-flex h-9 cursor-pointer items-center justify-center rounded-full border-[1.5px] border-white/15 bg-transparent px-3.5 text-[13px] font-semibold hover:bg-sunken">Upload logo</label>
+            <label htmlFor="logo-file" className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-line bg-surface px-3 text-[13px] font-semibold text-ink hover:bg-sunken">Upload logo</label>
             <input id="logo-file" type="file" accept="image/*" className="sr-only" onChange={onLogo} />
             {st.logo ? <button type="button" onClick={() => a.updateSettings({ logo: null })} className="text-left text-xs font-semibold text-danger hover:underline cursor-pointer">Remove logo</button> : <span className="text-xs text-muted">PNG, JPG or SVG, up to 600 KB</span>}
           </div>
