@@ -1,7 +1,5 @@
-import { useEffect } from 'react';
 import { useApp } from './store.jsx';
-import { installEffects } from './lib/effects.js';
-import { Sidebar, Topbar, Toast, Backdrop } from './components/Shell.jsx';
+import { Sidebar, Topbar, Toast } from './components/Shell.jsx';
 import { Assistant } from './components/Assistant.jsx';
 import { Modals } from './components/Modals.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
@@ -19,11 +17,10 @@ const PAGES = {
 
 export default function App() {
   const { s } = useApp();
-  useEffect(installEffects, []);
   if (s.screen === 'loading') {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 text-muted" role="status">
-        <span className="fx-typing flex gap-1.5" aria-hidden="true"><i /><i /><i /></span>Loading your books…
+        <span className="typing-dots flex gap-1.5" aria-hidden="true"><i /><i /><i /></span>Loading your books…
       </div>
     );
   }
@@ -31,9 +28,8 @@ export default function App() {
   const Page = PAGES[s.screen] || Dashboard;
   return (
     <div className="flex min-h-screen bg-bg text-ink">
-      <Backdrop />
       <Sidebar />
-      <div className="relative z-[1] flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
         <main className="gutter flex-1 pb-28 pt-6">
           <div className="mx-auto w-full max-w-[1320px]" key={s.screen + (s.viewNo || '')}><Page /></div>
