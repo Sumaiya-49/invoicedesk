@@ -18,6 +18,7 @@ export function InvoiceView() {
     ...(inv.payments || []).map((p) => ({ date: p.date, at: p.recordedAt, text: `Payment ${inr(p.amount)} via ${p.method.toUpperCase()}${p.recordedAt && !p.recordedAt.startsWith(p.date) ? ` (paid on ${fdate(p.date)})` : ''}`, icon: 'rupee' })),
     ...(inv.status === 'paid' && !(inv.payments || []).length ? [{ date: inv.due, text: 'Marked as paid', icon: 'check' }] : []),
     ...(edited ? [{ date: inv.updatedAt.slice(0, 10), at: inv.updatedAt, text: 'Last edited', icon: 'edit' }] : []),
+    ...(inv.sharedOn ? [{ date: inv.sharedOn.slice(0, 10), at: inv.sharedOn, text: `Shared on WhatsApp${inv.c.phone ? ` with ${inv.c.phone}` : ''}`, icon: 'chat' }] : []),
   ].sort((x, y) => ((x.at || x.date) < (y.at || y.date) ? -1 : 1));
 
   return (
@@ -36,6 +37,7 @@ export function InvoiceView() {
           <Button size="sm" icon="copy" onClick={() => a.duplicateInvoice(inv.no)}>Duplicate</Button>
           {inv.live && <Button size="sm" icon="credit" onClick={() => a.go('credits', { cnInvoice: inv.no })}>Credit note</Button>}
           <Button size="sm" icon="download" onClick={() => a.downloadPdf(inv.no)}>PDF</Button>
+          <Button size="sm" icon="chat" onClick={() => a.shareWhatsApp(inv.no)}>WhatsApp</Button>
           <Button size="sm" variant="danger" icon="trash" onClick={() => a.askDeleteInvoice(inv.no)}>Delete</Button>
         </div>
       </div>

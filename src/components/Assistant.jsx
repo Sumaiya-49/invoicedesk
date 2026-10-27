@@ -119,7 +119,17 @@ function BotMessage({ m }) {
           {m.status === 'cancelled' && <div className="bg-sunken px-3 py-2 text-[13px] font-semibold text-muted">Cancelled · nothing changed</div>}
         </div>
       )}
-      {m.openNo && <div><Button size="sm" icon="eye" onClick={() => a.viewInvoice(m.openNo)}>Open {m.openNo}</Button></div>}
+      {(m.whatsapp || m.openNo) && (
+        <div className="flex flex-wrap gap-2">
+          {m.whatsapp && (
+            <a href={m.whatsapp} target="_blank" rel="noopener noreferrer"
+              className="inline-flex h-9 items-center gap-2 rounded-xl bg-accent px-3 text-[13px] font-semibold text-accent-ink shadow-sm hover:brightness-110">
+              <Icon name="chat" size={15} />Open WhatsApp
+            </a>
+          )}
+          {m.openNo && <Button size="sm" icon="eye" onClick={() => a.viewInvoice(m.openNo)}>Open {m.openNo}</Button>}
+        </div>
+      )}
       {(m.engine || m.source) && (
         <div className="flex items-center gap-1.5 text-[11px] text-muted">
           <Icon name="db" size={12} />{[m.engine, m.source && `used ${m.source}`].filter(Boolean).join(' · ')}

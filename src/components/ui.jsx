@@ -37,6 +37,7 @@ const PATHS = {
   convert: 'M4 7h12l-3-3M20 17H8l3 3',
   alert: 'M12 3 2 20h20zM12 10v4M12 17h.01',
   lock: 'M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3',
+  chat: 'M4 5h16v11H10l-4 4v-4H4zM8 10h8M8 13h5',
 };
 
 export function Icon({ name, size = 18, className = '', stroke = 2 }) {
@@ -71,7 +72,7 @@ export function IconButton({ icon, label, onClick, tone = 'default', className =
   return (
     <button type="button" onClick={onClick} aria-label={label} title={label}
       className={cx('inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors cursor-pointer',
-        tone === 'danger' ? 'text-muted hover:bg-danger-soft hover:text-danger' : 'text-muted hover:bg-sunken hover:text-ink', className)}>
+        tone === 'danger' ? 'text-muted hover:bg-danger-soft hover:text-danger' : tone === 'ok' ? 'text-ok hover:bg-ok-soft' : 'text-muted hover:bg-sunken hover:text-ink', className)}>
       <Icon name={icon} size={17} />
     </button>
   );

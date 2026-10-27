@@ -21,6 +21,7 @@ export function Invoices() {
     <>
       <IconButton icon="eye" label={`View ${i.no}`} onClick={() => a.viewInvoice(i.no)} />
       <IconButton icon="copy" label={`Duplicate ${i.no}`} onClick={() => a.duplicateInvoice(i.no)} />
+      <IconButton icon="chat" tone="ok" label={`Send ${i.no} on WhatsApp`} onClick={() => a.shareWhatsApp(i.no)} />
       {i.balance > 0 && <IconButton icon="bell" label={`Send reminder for ${i.no}`} onClick={() => a.openReminder([i.no])} />}
       <IconButton icon="trash" tone="danger" label={`Delete ${i.no}`} onClick={() => a.askDeleteInvoice(i.no)} />
     </>
@@ -57,7 +58,7 @@ export function Invoices() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr><Th>Invoice</Th><Th>Customer</Th><Th>Due</Th><Th>GST type</Th><Th right>Taxable</Th><Th right className="hidden 2xl:table-cell">GST</Th><Th right>Total</Th><Th right>Balance</Th><Th>Status</Th><Th right><span className="sr-only">Actions</span></Th></tr>
+                <tr><Th>Invoice</Th><Th>Customer</Th><Th>Due</Th><Th className="hidden min-[1400px]:table-cell">GST type</Th><Th right className="hidden min-[1700px]:table-cell">Taxable</Th><Th right className="hidden 2xl:table-cell">GST</Th><Th right>Total</Th><Th right>Balance</Th><Th>Status</Th><Th right><span className="sr-only">Actions</span></Th></tr>
               </thead>
               <tbody>
                 {rows.map((i) => (
@@ -67,10 +68,10 @@ export function Invoices() {
                       <div className="text-xs text-muted">{fdate(i.date)}</div>
                       <EditedAt at={i.updatedAt} />
                     </Td>
-                    <Td><div className="font-medium">{i.c.name}</div><div className="text-xs text-muted">{i.c.city}</div></Td>
+                    <Td><div className="font-medium">{i.c.name}</div><div className="text-xs text-muted">{i.c.city}</div><div className="mt-1 min-[1400px]:hidden"><TypeBadge type={i.type} /></div></Td>
                     <Td className="text-muted">{fdate(i.due)}{i.reminded && <div className="flex items-center gap-1 text-xs"><Icon name="bell" size={11} />{fdate(i.reminded)}</div>}</Td>
-                    <Td><TypeBadge type={i.type} /></Td>
-                    <Td right>{inr(i.t.taxable)}</Td>
+                    <Td className="hidden min-[1400px]:table-cell"><TypeBadge type={i.type} /></Td>
+                    <Td right className="hidden min-[1700px]:table-cell">{inr(i.t.taxable)}</Td>
                     <Td right className="hidden text-muted 2xl:table-cell">{inr(i.t.gst)}</Td>
                     <Td right className="font-semibold">{inr(i.t.total)}</Td>
                     <Td right>{i.balance > 0 ? inr(i.balance) : <span className="text-muted">—</span>}</Td>
