@@ -27,7 +27,7 @@ const toItem = (r) => ({
 const toInvoice = (r, items, payments) => ({
   no: r.invoice_no, date: r.invoice_date, due: r.due_date, custId: r.customer_id, status: r.status,
   override: r.supply_type_override || null, notes: r.notes || '', paid: Number(r.amount_paid),
-  fromQuote: r.from_quote || null, remindedOn: r.last_reminder_on || null,
+  fromQuote: r.from_quote || null, remindedOn: r.last_reminder_on || null, sharedOn: r.shared_on || null,
   createdAt: r.created_at || null, updatedAt: r.updated_at || null,
   items, payments: payments.map((p) => ({ amount: Number(p.amount), method: p.method, date: p.paid_on, recordedAt: p.created_at || null })),
 });

@@ -74,9 +74,12 @@ CREATE TABLE invoices (
   notes VARCHAR(500),
   from_quote VARCHAR(20),
   last_reminder_on DATE,
+  share_code VARCHAR(40),                     -- secret code in the link sent to the customer on WhatsApp
+  shared_on TIMESTAMP NULL,                   -- when it was last shared on WhatsApp
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL,
   UNIQUE (user_id, invoice_no),
+  INDEX (share_code),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (customer_id) REFERENCES customers(id)
 );

@@ -33,6 +33,9 @@ const LATER_COLUMNS = [
   ['quotes', 'updated_at', 'TIMESTAMP NULL'],
   ['expenses', 'updated_at', 'TIMESTAMP NULL'],
   ['credit_notes', 'updated_at', 'TIMESTAMP NULL'],
+  // WhatsApp sharing: the secret code in the customer's link, and when it was last shared
+  ['invoices', 'share_code', 'VARCHAR(40) NULL'],
+  ['invoices', 'shared_on', 'TIMESTAMP NULL'],
 ];
 let upgraded;
 function upgradeOnce() {

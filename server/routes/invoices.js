@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { handle } from '../errors.js';
-import { check, invoiceSchema, invoiceUpdateSchema, paymentSchema, remindSchema } from '../validation.js';
+import { check, invoiceSchema, invoiceUpdateSchema, paymentSchema, remindSchema, shareSchema } from '../validation.js';
+import { shareInvoice } from '../services/sharing.js';
 import {
   listInvoices, getInvoice, createInvoice, updateInvoice, deleteInvoice, addPayment, markUnpaid, markReminded,
 } from '../services/invoices.js';
@@ -21,5 +22,8 @@ router.post('/:no/unpaid', handle(async (req, res) => res.json(await markUnpaid(
 
 // POST /api/invoices/reminders  { nos: ['INV-0007'] }
 router.post('/reminders', handle(async (req, res) => res.json(await markReminded(req.userId, check(remindSchema, req.body).nos))));
+
+// POST /api/invoices/:no/share  { phone? }  -> link code + number for WhatsApp (saves the phone on the customer if given)
+router.post('/:no/share', handle(async (req, res) => res.json(await shareInvoice(req.userId, req.params.no, check(shareSchema, req.body || {})))));
 
 export default router;

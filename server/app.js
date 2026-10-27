@@ -9,6 +9,8 @@ import quoteRoutes from './routes/quotes.js';
 import creditNoteRoutes from './routes/creditNotes.js';
 import expenseRoutes from './routes/expenses.js';
 import chatRoutes from './routes/chat.js';
+import { handle } from './errors.js';
+import { getSharedInvoice } from './services/sharing.js';
 
 const app = express();
 app.use(express.json({ limit: '2mb' })); // 2 MB so a logo image fits in the template settings
@@ -17,6 +19,11 @@ app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 // Public routes
 app.use('/api/auth', authRoutes);
+// The invoice link sent to a customer on WhatsApp. No login: the long random code is the key, and it shows only that invoice.
+app.get('/api/public/invoice/:code', handle(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(await getSharedInvoice(req.params.code));
+}));
 
 // Everything below needs a logged-in user (sets req.userId)
 app.use('/api/customers', requireLogin, customerRoutes);
