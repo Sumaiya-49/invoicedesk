@@ -110,7 +110,7 @@ export function Customers() {
             {s.customers.map((c) => {
               const owed = owedBy(c);
               return (
-                <MobileRow key={c.id} title={c.name} sub={<>{c.gstin ? `GSTIN ${c.gstin}` : 'Unregistered'}<br />{c.city}, {c.stateName} ({c.state})<EditedAt at={c.updatedAt} className="mt-1" /></>}
+                <MobileRow key={c.id} title={c.name} sub={<>{c.gstin ? `GSTIN ${c.gstin}` : 'Unregistered'}<br />{c.city}, {c.stateName} ({c.state}){c.phone && <><br /><span className="tabular-nums">{c.phone}</span></>}<EditedAt at={c.updatedAt} className="mt-1" /></>}
                   value={owed > 0 ? inr(owed) : '—'} valueClass={owed > 0 ? 'text-warn' : 'text-muted'} valueSub={owed > 0 ? 'outstanding' : `${d.invs.filter((i) => i.custId === c.id).length} invoices`}
                   meta={<TypeBadge type={c.state === seller.state ? 'INTRA' : 'INTER'} />} actions={customerActions(c)} />
               );
@@ -126,7 +126,7 @@ export function Customers() {
                 const owed = r2(mine.reduce((x, i) => x + i.balance, 0));
                 return (
                   <tr key={c.id} className="hover:bg-sunken/50">
-                    <Td><div className="font-semibold">{c.name}</div><div className="text-xs text-muted">{c.email}</div><EditedAt at={c.updatedAt} /></Td>
+                    <Td><div className="font-semibold">{c.name}</div><div className="text-xs text-muted">{c.email}</div>{c.phone && <div className="text-xs text-muted tabular-nums">{c.phone}</div>}<EditedAt at={c.updatedAt} /></Td>
                     <Td className="tabular-nums">{c.gstin || <span className="text-muted">Unregistered</span>}</Td>
                     <Td>{c.stateName} <span className="text-muted tabular-nums">({c.state})</span><div className="text-xs text-muted">{c.city}</div></Td>
                     <Td><TypeBadge type={c.state === seller.state ? 'INTRA' : 'INTER'} /></Td>

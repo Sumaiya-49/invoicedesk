@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../store.jsx';
 import { Modal, Button, Field, inputCls, cx } from './ui.jsx';
 import { inr, fdate, TODAY } from '../lib/format.js';
+import { normalizePhone } from '../lib/whatsapp.js';
 import { STATES, stateName } from '../data/seed.js';
 import { GST_RATES } from '../lib/gst.js';
 
@@ -84,11 +85,17 @@ function ReminderModal({ m, close }) {
 
 function CustomerModal({ m, close }) {
   const { a, seller } = useApp();
-  const [c, setC] = useState(m.data);
+  const [c, setC] = useState({ ...m.data, phone: m.data.phone || '' });
+  const [phoneError, setPhoneError] = useState('');
   const upd = (patch) => setC((x) => ({ ...x, ...patch }));
+  const save = () => {
+    // The mobile number is optional, but if one is typed it must work on WhatsApp
+    if (c.phone.trim() && !normalizePhone(c.phone)) { setPhoneError('Enter a 10-digit mobile number, or the full number with country code.'); return; }
+    a.saveCustomer({ ...c, phone: c.phone.trim(), gstin: c.gstin.trim().toUpperCase(), stateName: stateName(c.state) });
+  };
   return (
     <Modal title={c.id ? `Edit ${m.data.name}` : 'Add customer'} onClose={close}
-      footer={<><Button onClick={close}>Cancel</Button><Button variant="primary" onClick={() => a.saveCustomer({ ...c, gstin: c.gstin.trim().toUpperCase(), stateName: stateName(c.state) })}>{c.id ? 'Save changes' : 'Add customer'}</Button></>}>
+      footer={<><Button onClick={close}>Cancel</Button><Button variant="primary" onClick={save}>{c.id ? 'Save changes' : 'Add customer'}</Button></>}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Business name" id="c-name" className="sm:col-span-2"><input id="c-name" className={inputCls} value={c.name} onChange={(e) => upd({ name: e.target.value })} /></Field>
         <Field label="GSTIN" id="c-gstin" hint="Leave empty for unregistered buyers." className="sm:col-span-2">
@@ -101,7 +108,12 @@ function CustomerModal({ m, close }) {
           </select>
         </Field>
         <Field label="City" id="c-city"><input id="c-city" className={inputCls} value={c.city} onChange={(e) => upd({ city: e.target.value })} /></Field>
-        <Field label="Email" id="c-email" className="sm:col-span-2"><input id="c-email" type="email" className={inputCls} value={c.email} onChange={(e) => upd({ email: e.target.value })} /></Field>
+        <Field label="Email" id="c-email"><input id="c-email" type="email" className={inputCls} value={c.email} onChange={(e) => upd({ email: e.target.value })} /></Field>
+        <Field label="Mobile (WhatsApp)" id="c-phone"
+          hint={phoneError ? <span className="font-medium text-danger">{phoneError}</span> : 'Invoices are sent to this number on WhatsApp.'}>
+          <input id="c-phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="98400 12345" className={cx(inputCls, 'tabular-nums', phoneError && 'border-danger')}
+            value={c.phone} onChange={(e) => { upd({ phone: e.target.value }); setPhoneError(''); }} />
+        </Field>
         <p className="text-xs text-muted sm:col-span-2">{c.state === seller.state ? 'Same state as you, so invoices will charge CGST + SGST.' : 'Different state from you, so invoices will charge IGST.'}</p>
       </div>
     </Modal>

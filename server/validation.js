@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { badRequest } from './errors.js';
 import { STATES } from '../src/data/seed.js';
 import { GST_RATES } from '../src/lib/gst.js';
+import { normalizePhone } from '../src/lib/whatsapp.js';
 
 // Every request body is checked here before it reaches the database.
 
@@ -32,7 +33,7 @@ export const loginSchema = z.object({
 export const customerSchema = z.object({
   name: z.string().trim().min(1, 'Customer name is required').max(150),
   email: z.string().trim().email('Enter a valid email').optional().nullable().or(z.literal('')).transform((v) => v || null),
-  phone: optText(20),
+  phone: optText(20).refine((v) => !v || normalizePhone(v), 'Enter a 10-digit mobile number, or the full number with country code'),
   gstin,
   state: stateCode,
   city: optText(80),
@@ -130,6 +131,7 @@ export const settingsSchema = z.object({
 });
 
 export const remindSchema = z.object({ nos: z.array(z.string()).min(1).max(100) });
+export const shareSchema = z.object({ phone: optText(20) });
 
 /** Check data against a schema; on failure send a 400 with the first problem in plain words. */
 export function check(schema, data) {
