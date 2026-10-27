@@ -7,6 +7,7 @@ import { derive, STATUS } from './lib/derive.js';
 import { TODAY, addDays, inr, r2, monthLabel, todayIST } from './lib/format.js';
 import { downloadCsv, downloadXlsx, downloadInvoicePdf } from './lib/downloads.js';
 import { api, auth } from './api.js';
+import { shareLink, shareMessage, whatsappUrl } from './lib/whatsapp.js';
 import { offlineReply, runOfflineAction, SUGGESTIONS } from './assistant/offlineAssistant.js';
 
 const AppCtx = createContext(null);
@@ -335,6 +336,32 @@ export function AppProvider({ children }) {
     }
   };
 
+  // ---------------------------------------------------------------- WhatsApp
+  /** wa.me link with the invoice message for this customer. */
+  const whatsappFor = (no, code, phone) => {
+    const { s: cur, d: dd } = ref.current;
+    return whatsappUrl(phone, shareMessage(dd.byNo[no], cur.seller, shareLink(window.location.origin, code)));
+  };
+  /**
+   * WhatsApp button: records the share in the database, then opens WhatsApp with the message typed in.
+   * If the customer's number is saved, their chat opens directly; if not, WhatsApp lets you pick the contact.
+   * The new tab is opened straight away, inside the click, because browsers block tabs that open later.
+   */
+  const shareWhatsApp = async (no, phone) => {
+    const inv = ref.current.d.byNo[no];
+    if (!inv) return false;
+    const win = window.open('', '_blank');
+    const r = await run(() => api.post(`/invoices/${no}/share`, phone ? { phone } : {}));
+    if (!r) { win?.close(); return false; }
+    const url = whatsappFor(no, r.code, r.phone);
+    if (win) { win.opener = null; win.location.href = url; } else window.location.href = url;
+    set({ modal: null });
+    toast(r.phone
+      ? `WhatsApp opened with ${no} for ${r.customer}. Press Send there.`
+      : `WhatsApp opened with ${no}. Pick ${r.customer}’s chat there and press Send. (Save their number in Customers to skip this.)`);
+    return true;
+  };
+
   // ---------------------------------------------------------------- assistant
   // Every message is shown at once and saved to the database in the background,
   // so the conversation is still there after logging in again.
@@ -390,7 +417,8 @@ export function AppProvider({ children }) {
       const result = msg.token ? await api.post('/chat/confirm', { token: msg.token }) : await runOfflineAction(msg.action);
       await reload();
       setStatus(id, 'done');
-      addMessages({ id: msgId(), from: 'bot', text: result.text, openNo: result.openNo });
+      const whatsapp = result.share ? whatsappFor(result.share.no, result.share.code, result.share.phone) : undefined;
+      addMessages({ id: msgId(), from: 'bot', text: result.text, openNo: result.openNo, whatsapp });
     } catch (err) {
       setStatus(id, 'pending');
       addMessages({ id: msgId(), from: 'bot', text: `That didn’t work: ${err.message}` });
@@ -417,7 +445,7 @@ export function AppProvider({ children }) {
 
   const actions = {
     set, toast, go, viewInvoice, newInvoice, newQuote, editInvoice, duplicateInvoice, editQuote, setForm, setItem, pickProduct,
-    addItem, removeItem, saveForm, askDeleteInvoice, openPayment, recordPayment, askMarkUnpaid, markSent, openReminder, sendReminders,
+    addItem, removeItem, saveForm, askDeleteInvoice, openPayment, recordPayment, askMarkUnpaid, markSent, shareWhatsApp, openReminder, sendReminders,
     convertQuoteAndOpen, setQuoteStatus, askDeleteQuote, issueCreditNote, askDeleteCreditNote, saveCustomer, askDeleteCustomer, saveProduct,
     askDeleteProduct, addExpense, updateExpense, deleteExpense, updateSettings, exportData, downloadPdf, chat, login, signup, logout, loadSample,
   };

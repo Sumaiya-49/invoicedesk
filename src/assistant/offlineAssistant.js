@@ -5,6 +5,7 @@
 import { itemFrom, STATES } from '../data/seed.js';
 import { todayIST, addDays, inr, fdate, r2, monthLabel } from '../lib/format.js';
 import { api } from '../api.js';
+import { normalizePhone } from '../lib/whatsapp.js';
 
 const today = () => todayIST();
 const prevMonth = () => {
@@ -286,6 +287,17 @@ const proposals = {
     });
   },
 
+  whatsapp(no) {
+    const i = ref.current.d.byNo[no];
+    if (!i) return reply(`${no} isn’t in your records.`);
+    const phone = normalizePhone(i.c.phone);
+    const due = i.live && i.balance > 0;
+    reply(`I’ll get ${no} ready to send to ${i.c.name} on WhatsApp.`, {
+      card: { title: 'Send invoice on WhatsApp', rows: [['Invoice', `${no} · ${i.c.name}`], ['WhatsApp number', phone ? `+${phone}` : 'Not saved · pick the chat in WhatsApp'], [due ? 'Balance due' : 'Invoice total', inr(due ? i.balance : i.t.total), true], ['Message', 'Invoice details + link to view and download the PDF']] },
+      status: 'pending', source: 'get_invoice', action: { type: 'whatsapp', no },
+    });
+  },
+
   unpaid(no) {
     const i = ref.current.d.byNo[no];
     if (!i) return reply(`${no} isn’t in your records.`);
@@ -315,16 +327,21 @@ const proposals = {
     const t = q.toLowerCase();
     const gstin = (q.toUpperCase().match(/\b\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]\b/) || [])[0] || '';
     const st = STATES.find(([code, name]) => t.includes(name.toLowerCase())) || (gstin ? STATES.find(([code]) => code === gstin.slice(0, 2)) : null);
-    const nameMatch = q.match(/customer\s+(?:named\s+|called\s+)?(.+?)(?:\s+(?:from|in|of|located|based|with|gstin|,)\b|,|$)/i);
+    const nameMatch = q.match(/customer\s+(?:named\s+|called\s+)?(.+?)(?:\s+(?:from|in|of|located|based|with|gstin|mobile|phone|number|whatsapp|no)\b|,|$)/i);
     const name = nameMatch ? nameMatch[1].trim().replace(/\b\w/g, (ch) => ch.toUpperCase()) : '';
     if (!name) return reply('What’s the customer’s name? For example: “add customer Sri Balaji Agencies from Karnataka”.');
     if (!st) return reply(`Which state is ${name} in? I need it to decide CGST + SGST or IGST. For example: “add customer ${name} from Karnataka”.`);
     if (gstin && gstin.slice(0, 2) !== st[0]) return reply(`The GSTIN starts with ${gstin.slice(0, 2)}, which doesn’t match ${st[1]} (${st[0]}). Please check it.`);
     const city = (q.match(/\b(?:city|in)\s+([A-Z][a-z]+)/) || [])[1] || '';
+    // Mobile number for WhatsApp: ask for it unless the user says there isn't one
+    const phoneRaw = (q.match(/(?:\+?91[\s-]?)?\b\d{5}[\s-]?\d{5}\b/) || [])[0] || '';
+    const noPhone = /\b(no|without|skip)\s+(mobile|phone|number|whatsapp)/.test(t);
+    if (phoneRaw && !normalizePhone(phoneRaw)) return reply('That mobile number doesn’t look right. Please give a 10-digit number.');
+    if (!phoneRaw && !noPhone) return reply(`What’s ${name}’s mobile (WhatsApp) number? Invoices are sent to it on WhatsApp. Say it like: “add customer ${name} from ${st[1]}, mobile 98400 12345”, or add “no number” to skip.`);
     reply(`I’ll add ${name} as a new customer.`, {
-      card: { title: 'Add customer', rows: [['Name', name], ['State', `${st[1]} (${st[0]})`], ['GSTIN', gstin || 'Unregistered'], ['GST on invoices', st[0] === ref.current.s.seller.state ? 'CGST + SGST' : 'IGST']] },
+      card: { title: 'Add customer', rows: [['Name', name], ['State', `${st[1]} (${st[0]})`], ['GSTIN', gstin || 'Unregistered'], ['Mobile (WhatsApp)', phoneRaw || 'Not given'], ['GST on invoices', st[0] === ref.current.s.seller.state ? 'CGST + SGST' : 'IGST']] },
       status: 'pending', source: 'create_customer',
-      action: { type: 'addCustomer', c: { name, state: st[0], stateName: st[1], gstin, city, email: '' } },
+      action: { type: 'addCustomer', c: { name, state: st[0], stateName: st[1], gstin, city, email: '', phone: phoneRaw } },
     });
   },
 
@@ -376,7 +393,7 @@ const proposals = {
 };
 
 const READ_SUGGESTIONS = ['How much does Ravi Traders owe me?', 'GST collected in October?', 'What was my profit in October?', 'Show overdue invoices', 'List all customers'];
-const WRITE_SUGGESTIONS = ['Invoice Ravi Traders for 5 cement bags and 10 steel rods', 'Change due date of INV-0009 to 30 Nov', 'Record payment of ₹10,000 on INV-0005', 'Add customer Sri Balaji Agencies from Karnataka', 'Change price of PVC Pipe to ₹330', 'Edit the BSNL expense to 1650', 'Convert QT-0003 to an invoice', 'Change invoice template colour to Indigo'];
+const WRITE_SUGGESTIONS = ['Invoice Ravi Traders for 5 cement bags and 10 steel rods', 'Change due date of INV-0009 to 30 Nov', 'Record payment of ₹10,000 on INV-0005', 'Add customer Sri Balaji Agencies from Karnataka, mobile 98450 12345', 'Change price of PVC Pipe to ₹330', 'Edit the BSNL expense to 1650', 'Convert QT-0003 to an invoice', 'Send INV-0010 to the customer on WhatsApp', 'Change invoice template colour to Indigo'];
 
 const handleChat = (q) => {
   const t = q.toLowerCase();
@@ -389,7 +406,8 @@ const handleChat = (q) => {
 
   // ---------- write requests
   const isWrite = verb('create', 'make', 'generate', 'raise', 'prepare', 'bill', 'add', 'new', 'delete', 'remove', 'mark', 'update', 'change', 'edit', 'set', 'extend', 'cancel', 'convert', 'remind', 'record', 'received', 'receive')
-    || (/^(invoice|quote|quotation)\b/.test(t) && findItems(t).length > 0);
+    || (/^(invoice|quote|quotation)\b/.test(t) && findItems(t).length > 0)
+    || /whats\s?app|watsapp|whatsap/.test(t);
   if (isWrite) {
     if (!write) return reply('I’m in Read mode, so I can only look things up. Switch to Write mode and I’ll prepare the change for you to confirm.');
     const cust = findCustomer(t, words);
@@ -401,6 +419,7 @@ const handleChat = (q) => {
       return reply('What should I delete? Give an invoice or quotation number like INV-0011 or QT-0005, or say “delete customer <name>”.');
     }
     if (has('customer', 'client') && verb('add', 'new', 'create')) return proposals.addCustomer(q);
+    if (/whats\s?app|watsapp|whatsap/.test(t)) return ref_ && ref_.startsWith('INV') ? proposals.whatsapp(ref_) : reply('Which invoice should I send on WhatsApp? For example “send INV-0010 on WhatsApp”.');
     if (ref_ && ref_.startsWith('INV') && /\b(unpaid|not paid)\b/.test(t) && !has('show', 'list', 'which')) return proposals.unpaid(ref_);
     if (ref_ && ref_.startsWith('INV') && (verb('record', 'received', 'receive') || has('payment') || /\bpaid\b/.test(t))) return proposals.payment(q, ref_);
     if (ref_ && ref_.startsWith('INV')) return proposals.update(q, ref_);
@@ -429,7 +448,7 @@ const handleChat = (q) => {
 };
 
 // Simple mode (no AI key) only understands these write requests
-const SIMPLE_WRITE_SUGGESTIONS = ['Invoice Ravi Traders for 5 cement bags and 10 steel rods', 'Change due date of INV-0009 to 30 Nov', 'Record payment of ₹10,000 on INV-0005', 'Add customer Sri Balaji Agencies from Karnataka', 'Convert QT-0003 to an invoice', 'Delete INV-0011'];
+const SIMPLE_WRITE_SUGGESTIONS = ['Invoice Ravi Traders for 5 cement bags and 10 steel rods', 'Change due date of INV-0009 to 30 Nov', 'Record payment of ₹10,000 on INV-0005', 'Add customer Sri Balaji Agencies from Karnataka, mobile 98450 12345', 'Convert QT-0003 to an invoice', 'Send INV-0010 on WhatsApp', 'Delete INV-0011'];
 export const SUGGESTIONS = { read: READ_SUGGESTIONS, write: WRITE_SUGGESTIONS, simpleWrite: SIMPLE_WRITE_SUGGESTIONS };
 
 /** Answer one message. s = app state (data + chat mode), d = derived values from derive(). */
@@ -453,6 +472,7 @@ export async function runOfflineAction(a) {
     case 'addCustomer': { const c = await api.post('/customers', a.c); return { text: `Done. ${c.name} is added.` }; }
     case 'convert': { const inv = await api.post(`/quotes/${a.no}/convert`); return { text: `Done. ${a.no} is now ${inv.no}, marked as sent.`, openNo: inv.no }; }
     case 'remind': await api.post('/invoices/reminders', { nos: a.nos }); return { text: `Done. Reminder recorded for ${a.nos.join(', ')}.` };
+    case 'whatsapp': { const r = await api.post(`/invoices/${a.no}/share`); return { text: r.phone ? `Done. Tap "Open WhatsApp" to send ${a.no} to ${r.customer}, then press Send in WhatsApp.` : `Done. Tap "Open WhatsApp", pick ${r.customer}’s chat and press Send.`, share: { no: r.no, code: r.code, phone: r.phone }, openNo: a.no }; }
     case 'unpaid': await api.post(`/invoices/${a.no}/unpaid`); return { text: `Done. ${a.no} is unpaid again.`, openNo: a.no };
     case 'delete': await api.del(`/invoices/${a.no}`); return { text: `Done. ${a.no} is deleted.` };
     case 'deleteQuote': await api.del(`/quotes/${a.no}`); return { text: `Done. ${a.no} is deleted.` };

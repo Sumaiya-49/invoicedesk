@@ -101,9 +101,13 @@ export const WRITE_TOOLS = [
   tool('send_payment_reminders', 'Send payment reminders. Leave invoice_nos empty for all overdue invoices.', {
     invoice_nos: { type: 'array', items: { type: 'string' } },
   }),
-  tool('create_customer', 'Add a customer.', {
+  tool('share_invoice_whatsapp', 'Send an invoice to its customer on WhatsApp (message with the amount, due date and a link to view and download the PDF). If the user names only the customer, find their invoice with search_invoices first (usually the latest unpaid one). Pass phone only if the user gives a number. If the customer has no number saved, it still works: WhatsApp opens and the user picks the chat.', {
+    invoice_no: str('e.g. INV-0010'), phone: str('WhatsApp number, only if given by the user (optional)'),
+  }, ['invoice_no']),
+  tool('create_customer', 'Add a customer. Always ask for their mobile (WhatsApp) number if the user did not give it, because invoices are sent to it on WhatsApp. If the user says they have no number or want to skip it, call with no_phone true.', {
     name: str('Business name'), state: str('Indian state name or 2-digit code'), gstin: str('optional'),
-    city: str('optional'), email: str('optional'), phone: str('optional'),
+    city: str('optional'), email: str('optional'), phone: str('Mobile / WhatsApp number'),
+    no_phone: { type: 'boolean', description: 'true only if the user said there is no number or to skip it' },
   }, ['name', 'state']),
   tool('update_customer', 'Change a customer. Only the given fields change.', {
     customer: str('Current customer name'), name: str('New name'), state: str('New state'), gstin: str('New GSTIN'),

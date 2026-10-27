@@ -13,6 +13,8 @@ import { updateSettings } from '../services/users.js';
 import { TEMPLATE_COLOURS } from './readTools.js';
 import { createCustomer, updateCustomer, deleteCustomer } from '../services/customers.js';
 import { createProduct, updateProduct, deleteProduct } from '../services/products.js';
+import { shareInvoice } from '../services/sharing.js';
+import { normalizePhone } from '../../src/lib/whatsapp.js';
 import { createExpense, updateExpense, deleteExpense } from '../services/expenses.js';
 
 const gstRows = (k) => (k.type === 'INTRA'
@@ -236,13 +238,37 @@ export function prepareWrite(name, args, data) {
       };
     }
 
+    case 'share_invoice_whatsapp': {
+      const no = docNo(args.invoice_no, 'INV');
+      const inv = d.byNo[no];
+      if (!inv) throw new Error(`${no} does not exist.`);
+      const phone = normalizePhone(args.phone || inv.c.phone);
+      if (args.phone && !phone) throw new Error('That phone number does not look valid. Ask the user for a 10-digit mobile number.');
+      const due = inv.live && inv.balance > 0;
+      return {
+        action: { type: name, no, phone: args.phone ? String(args.phone).trim() : null },
+        card: {
+          title: 'Send invoice on WhatsApp',
+          rows: [
+            ['Invoice', `${no} · ${inv.c.name}`],
+            ['WhatsApp number', phone ? `+${phone}${args.phone && normalizePhone(inv.c.phone) !== phone ? ' (will be saved)' : ''}` : 'Not saved · pick the chat in WhatsApp'],
+            [due ? 'Balance due' : 'Invoice total', inr(due ? inv.balance : inv.t.total), true],
+            ['Message', 'Invoice details + link to view and download the PDF'],
+          ],
+        },
+      };
+    }
+
     case 'create_customer': {
+      if (!args.phone && !args.no_phone) {
+        throw new Error(`Ask the user for ${args.name || 'the customer'}'s mobile (WhatsApp) number, so invoices can be sent on WhatsApp. If they don't have it, call create_customer again with no_phone true.`);
+      }
       const st = findState(args.state);
       const c = check(customerSchema, { name: args.name, state: st.code, gstin: args.gstin, city: args.city, email: args.email, phone: args.phone });
       if (data.customers.some((x) => x.name.toLowerCase() === c.name.toLowerCase())) throw new Error(`${c.name} already exists.`);
       return {
         action: { type: name, customer: c },
-        card: { title: 'Add customer', rows: [['Name', c.name], ['State', `${st.name} (${st.code})`], ['GSTIN', c.gstin || 'Unregistered'], ['City', c.city || '—'], ['GST on invoices', st.code === data.seller.state ? 'CGST + SGST' : 'IGST']] },
+        card: { title: 'Add customer', rows: [['Name', c.name], ['State', `${st.name} (${st.code})`], ['GSTIN', c.gstin || 'Unregistered'], ['City', c.city || '—'], ['Mobile (WhatsApp)', c.phone || 'Not given'], ['GST on invoices', st.code === data.seller.state ? 'CGST + SGST' : 'IGST']] },
       };
     }
 
@@ -254,7 +280,7 @@ export function prepareWrite(name, args, data) {
         city: args.city ?? cur.city, email: args.email ?? cur.email, phone: args.phone ?? cur.phone,
       });
       const rows = [['Customer', cur.name]];
-      for (const [label, before, after] of [['Name', cur.name, c.name], ['State', cur.stateName, st?.name ?? cur.stateName], ['GSTIN', cur.gstin, c.gstin], ['City', cur.city, c.city], ['Email', cur.email, c.email], ['Phone', cur.phone, c.phone]]) {
+      for (const [label, before, after] of [['Name', cur.name, c.name], ['State', cur.stateName, st?.name ?? cur.stateName], ['GSTIN', cur.gstin, c.gstin], ['City', cur.city, c.city], ['Email', cur.email, c.email], ['Mobile (WhatsApp)', cur.phone, c.phone]]) {
         if ((before || '') !== (after || '')) rows.push([label, `${before || '—'} → ${after || '—'}`]);
       }
       if (rows.length === 1) throw new Error('Nothing would change. What should be updated?');
@@ -325,6 +351,10 @@ export async function executeWrite(userId, a) {
     case 'mark_invoice_unpaid': await markUnpaid(userId, a.no); return { text: `Done. ${a.no} is unpaid again and its payments were removed.`, openNo: a.no };
     case 'delete_invoice': await deleteInvoice(userId, a.no); return { text: `Done. ${a.no} is deleted.` };
     case 'convert_quotation': { const inv = await convertQuote(userId, a.no); return { text: `Done. ${a.no} is now invoice ${inv.no}.`, openNo: inv.no }; }
+    case 'share_invoice_whatsapp': {
+      const r = await shareInvoice(userId, a.no, { phone: a.phone });
+      return { text: r.phone ? `Done. Tap "Open WhatsApp" to send ${r.no} to ${r.customer}, then press Send in WhatsApp.` : `Done. Tap "Open WhatsApp", pick ${r.customer}’s chat and press Send. (No number is saved for them.)`, share: { no: r.no, code: r.code, phone: r.phone }, openNo: r.no };
+    }
     case 'send_payment_reminders': await markReminded(userId, a.nos); return { text: `Done. Reminder recorded for ${a.nos.join(', ')}.` };
     case 'create_customer': { const c = await createCustomer(userId, a.customer); return { text: `Done. ${c.name} is added.` }; }
     case 'update_customer': { const c = await updateCustomer(userId, a.id, a.customer); return { text: `Done. ${c.name} is updated.` }; }
