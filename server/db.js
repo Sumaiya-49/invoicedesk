@@ -36,6 +36,10 @@ const LATER_COLUMNS = [
   // WhatsApp sharing: the secret code in the customer's link, and when it was last shared
   ['invoices', 'share_code', 'VARCHAR(40) NULL'],
   ['invoices', 'shared_on', 'TIMESTAMP NULL'],
+  // Selling a product in a smaller unit too (e.g. 1 Box = 10 Piece)
+  ['products', 'alt_unit', 'VARCHAR(20) NULL'],
+  ['products', 'alt_per_main', 'DECIMAL(10,3) NULL'],
+  ['products', 'alt_rate', 'DECIMAL(12,2) NULL'],
 ];
 let upgraded;
 function upgradeOnce() {

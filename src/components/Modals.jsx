@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../store.jsx';
 import { Modal, Button, Field, inputCls, cx } from './ui.jsx';
-import { inr, fdate, TODAY } from '../lib/format.js';
+import { inr, fdate, TODAY, r2 } from '../lib/format.js';
 import { normalizePhone } from '../lib/whatsapp.js';
 import { STATES, stateName } from '../data/seed.js';
 import { GST_RATES } from '../lib/gst.js';
@@ -120,23 +120,66 @@ function CustomerModal({ m, close }) {
   );
 }
 
+const UNITS = ['Nos', 'Piece', 'Box', 'Bag', 'Kg', 'Gram', 'Ltr', 'Can', 'Mtr', 'Pack', 'Set', 'Dozen', 'Strip', 'Hrs'];
+
 function ProductModal({ m, close }) {
   const { a } = useApp();
-  const [p, setP] = useState(m.data);
-  const upd = (patch) => setP((x) => ({ ...x, ...patch }));
+  const [p, setP] = useState({ ...m.data, altOn: !!m.data.altUnit, altUnit: m.data.altUnit || '', altPer: m.data.altPer ?? '', altRate: m.data.altRate ?? '' });
+  const [error, setError] = useState('');
+  const upd = (patch) => { setP((x) => ({ ...x, ...patch })); setError(''); };
+  const units = (cur) => [...new Set([...UNITS, cur].filter(Boolean))];
+  // Smaller unit price: main price ÷ how many are in one main unit, unless the user typed their own
+  const auto = Number(p.rate) >= 0 && Number(p.altPer) > 1 ? r2(Number(p.rate) / Number(p.altPer)) : null;
+  const save = () => {
+    if (p.altOn) {
+      if (!p.altUnit) return setError('Pick the smaller unit, or untick “Also sell in a smaller unit”.');
+      if (p.altUnit === p.unit) return setError('The smaller unit must be different from the main unit.');
+      if (!(Number(p.altPer) > 1)) return setError(`Enter how many ${p.altUnit} are in 1 ${p.unit} (more than 1).`);
+    }
+    a.saveProduct({ ...p, altUnit: p.altOn ? p.altUnit : null, altPer: p.altOn ? Number(p.altPer) : null, altRate: p.altOn && p.altRate !== '' ? Number(p.altRate) : null });
+  };
   return (
     <Modal title={p.id ? `Edit ${m.data.name}` : 'Add product or service'} onClose={close}
-      footer={<><Button onClick={close}>Cancel</Button><Button variant="primary" onClick={() => a.saveProduct(p)}>{p.id ? 'Save changes' : 'Add product'}</Button></>}>
+      footer={<><Button onClick={close}>Cancel</Button><Button variant="primary" onClick={save}>{p.id ? 'Save changes' : 'Add product'}</Button></>}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name" id="p-name" className="sm:col-span-2"><input id="p-name" className={inputCls} value={p.name} onChange={(e) => upd({ name: e.target.value })} /></Field>
         <Field label="HSN/SAC code" id="p-hsn"><input id="p-hsn" className={cx(inputCls, 'tabular-nums')} value={p.hsn} onChange={(e) => upd({ hsn: e.target.value })} /></Field>
-        <Field label="Unit" id="p-unit">
-          <select id="p-unit" className={inputCls} value={p.unit} onChange={(e) => upd({ unit: e.target.value })}>{['Nos', 'Bag', 'Kg', 'Can', 'Hrs', 'Box', 'Mtr'].map((u) => <option key={u}>{u}</option>)}</select>
+        <Field label="Main unit" id="p-unit">
+          <select id="p-unit" className={inputCls} value={p.unit} onChange={(e) => upd({ unit: e.target.value })}>{units(p.unit).map((u) => <option key={u}>{u}</option>)}</select>
         </Field>
-        <Field label="Price before GST (₹)" id="p-rate"><input id="p-rate" type="number" min="0" className={cx(inputCls, 'tabular-nums')} value={p.rate} onChange={(e) => upd({ rate: e.target.value })} /></Field>
+        <Field label={`Price per ${p.unit} before GST (₹)`} id="p-rate"><input id="p-rate" type="number" min="0" className={cx(inputCls, 'tabular-nums')} value={p.rate} onChange={(e) => upd({ rate: e.target.value })} /></Field>
         <Field label="GST rate" id="p-gst">
           <select id="p-gst" className={inputCls} value={p.gst} onChange={(e) => upd({ gst: Number(e.target.value) })}>{GST_RATES.map((r) => <option key={r} value={r}>{r}%</option>)}</select>
         </Field>
+
+        <div className="flex flex-col gap-4 rounded-xl border border-line p-4 sm:col-span-2">
+          <label htmlFor="p-alt-on" className="flex cursor-pointer items-start gap-3">
+            <input id="p-alt-on" type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--accent)]" checked={p.altOn}
+              onChange={(e) => upd({ altOn: e.target.checked, altUnit: p.altUnit || (p.unit === 'Piece' ? 'Nos' : 'Piece') })} />
+            <span>
+              <span className="block text-[13px] font-semibold">Also sell in a smaller unit</span>
+              <span className="block text-xs text-muted">For example, sell a full Box or single Pieces from it. On invoices you can pick either unit.</span>
+            </span>
+          </label>
+          {p.altOn && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Smaller unit" id="p-alt-unit">
+                <select id="p-alt-unit" className={inputCls} value={p.altUnit} onChange={(e) => upd({ altUnit: e.target.value })}>
+                  {units(p.altUnit).filter((u) => u !== p.unit).map((u) => <option key={u}>{u}</option>)}
+                </select>
+              </Field>
+              <Field label={`${p.altUnit || 'Pieces'} in 1 ${p.unit}`} id="p-alt-per">
+                <input id="p-alt-per" type="number" min="2" inputMode="decimal" placeholder="e.g. 10" className={cx(inputCls, 'tabular-nums')} value={p.altPer} onChange={(e) => upd({ altPer: e.target.value })} />
+              </Field>
+              <Field label={`Price per ${p.altUnit || 'piece'} (₹)`} id="p-alt-rate"
+                hint={p.altRate === '' ? (auto != null ? `Auto: ₹${p.rate} ÷ ${p.altPer} = ${inr(auto)}` : 'Worked out automatically') : <button type="button" className="font-semibold text-accent hover:underline cursor-pointer" onClick={() => upd({ altRate: '' })}>Use auto price{auto != null ? ` (${inr(auto)})` : ''}</button>}>
+                <input id="p-alt-rate" type="number" min="0" inputMode="decimal" placeholder={auto != null ? String(auto) : 'Auto'} className={cx(inputCls, 'tabular-nums')} value={p.altRate} onChange={(e) => upd({ altRate: e.target.value })} />
+              </Field>
+              {auto != null && <p className="text-xs text-muted sm:col-span-3">1 {p.unit} = {p.altPer} {p.altUnit} · {inr(Number(p.rate))} per {p.unit}, {inr(p.altRate === '' ? auto : Number(p.altRate))} per {p.altUnit}</p>}
+            </div>
+          )}
+        </div>
+        {error && <p className="text-sm font-medium text-danger sm:col-span-2" role="alert">{error}</p>}
       </div>
     </Modal>
   );

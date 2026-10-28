@@ -39,12 +39,24 @@ export const customerSchema = z.object({
   city: optText(80),
 }).refine((d) => !d.gstin || d.gstin.slice(0, 2) === d.state, { message: 'The first two digits of the GSTIN must match the state code' });
 
+// Empty or missing stays empty (null). Checked before coercing, because Number(null) would turn it into 0.
+const optNumber = z.union([z.literal(''), z.null(), z.coerce.number()]).optional().transform((v) => (v === '' || v == null ? null : v));
+
 export const productSchema = z.object({
   name: z.string().trim().min(1, 'Product name is required').max(150),
   hsn: optText(10),
   unit: z.string().trim().min(1).max(20).default('Nos'),
   rate: z.coerce.number().min(0, 'Price cannot be negative'),
   gst: gstRate,
+  // Optional smaller unit (Unit of Measure conversion): 1 <unit> = altPer <altUnit>
+  altUnit: optText(20),
+  altPer: optNumber,
+  altRate: optNumber,
+}).superRefine((p, ctx) => {
+  if (!p.altUnit) { p.altPer = null; p.altRate = null; return; }
+  if (!(p.altPer > 1)) ctx.addIssue({ code: 'custom', path: ['altPer'], message: `How many ${p.altUnit} are in 1 ${p.unit}? Enter a number above 1` });
+  if (p.altUnit.toLowerCase() === p.unit.toLowerCase()) ctx.addIssue({ code: 'custom', path: ['altUnit'], message: 'The smaller unit must be different from the main unit' });
+  if (p.altRate != null && p.altRate < 0) ctx.addIssue({ code: 'custom', path: ['altRate'], message: 'Price cannot be negative' });
 });
 
 // Line items use the same shape as the React app: { pid, name, hsn, unit, rate, gst, qty, disc }

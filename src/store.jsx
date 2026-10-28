@@ -8,6 +8,7 @@ import { TODAY, addDays, inr, r2, monthLabel, todayIST } from './lib/format.js';
 import { downloadCsv, downloadXlsx, downloadInvoicePdf } from './lib/downloads.js';
 import { api, auth } from './api.js';
 import { shareLink, shareMessage, whatsappUrl } from './lib/whatsapp.js';
+import { rateFor } from './lib/units.js';
 import { offlineReply, runOfflineAction, SUGGESTIONS } from './assistant/offlineAssistant.js';
 
 const AppCtx = createContext(null);
@@ -156,6 +157,12 @@ export function AppProvider({ children }) {
     const prod = ref.current.s.products.find((x) => x.id === Number(pid));
     if (prod) setItem(idx, { pid: prod.id, name: prod.name, hsn: prod.hsn, unit: prod.unit, rate: prod.rate, gst: prod.gst });
   };
+  /** Unit dropdown on a line: switching Box <-> Piece also switches the rate (Unit of Measure conversion). */
+  const setItemUnit = (idx, unit) => {
+    const it = ref.current.s.form.items[idx];
+    const prod = ref.current.s.products.find((x) => x.id === it.pid);
+    setItem(idx, prod ? { unit, rate: rateFor(prod, unit) } : { unit });
+  };
   const addItem = () => set((p) => ({ form: { ...p.form, items: [...p.form.items, itemFrom(p.products[0], 1)] } }));
   const removeItem = (idx) => set((p) => ({ form: { ...p.form, items: p.form.items.filter((_, i) => i !== idx) } }));
 
@@ -256,7 +263,7 @@ export function AppProvider({ children }) {
     });
   };
   const saveProduct = async (pr) => {
-    const body = { name: pr.name, hsn: pr.hsn, unit: pr.unit, rate: pr.rate, gst: pr.gst };
+    const body = { name: pr.name, hsn: pr.hsn, unit: pr.unit, rate: pr.rate, gst: pr.gst, altUnit: pr.altUnit || null, altPer: pr.altPer ?? null, altRate: pr.altRate ?? null };
     const r = await run(() => (pr.id ? api.put(`/products/${pr.id}`, body) : api.post('/products', body)), (x) => (pr.id ? `${x.name} updated.` : `${x.name} added.`));
     if (r) set({ modal: null });
   };
@@ -444,7 +451,7 @@ export function AppProvider({ children }) {
   };
 
   const actions = {
-    set, toast, go, viewInvoice, newInvoice, newQuote, editInvoice, duplicateInvoice, editQuote, setForm, setItem, pickProduct,
+    set, toast, go, viewInvoice, newInvoice, newQuote, editInvoice, duplicateInvoice, editQuote, setForm, setItem, setItemUnit, pickProduct,
     addItem, removeItem, saveForm, askDeleteInvoice, openPayment, recordPayment, askMarkUnpaid, markSent, shareWhatsApp, openReminder, sendReminders,
     convertQuoteAndOpen, setQuoteStatus, askDeleteQuote, issueCreditNote, askDeleteCreditNote, saveCustomer, askDeleteCustomer, saveProduct,
     askDeleteProduct, addExpense, updateExpense, deleteExpense, updateSettings, exportData, downloadPdf, chat, login, signup, logout, loadSample,

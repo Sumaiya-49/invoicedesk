@@ -3,6 +3,7 @@ import { Card, Button, IconButton, Field, Segmented, TypeBadge, inputCls, cx } f
 import { inr, amountInWords } from '../lib/format.js';
 import { GST_RATES } from '../lib/gst.js';
 import { useIsPhone } from '../lib/effects.js';
+import { unitsOf, hasAltUnit, conversionLabel } from '../lib/units.js';
 
 /** Create / edit form shared by invoices and quotations. */
 export function DocForm() {
@@ -20,9 +21,21 @@ export function DocForm() {
         {!s.products.some((p) => p.id === l.pid) && <option value="">{l.name}</option>}
         {s.products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
       </select>
-      <div className="mt-1 text-xs text-muted tabular-nums">HSN/SAC {l.hsn} · per {l.unit}</div>
+      <div className="mt-1 text-xs text-muted tabular-nums">HSN/SAC {l.hsn}{prodOf(l) && hasAltUnit(prodOf(l)) ? ` · ${conversionLabel(prodOf(l))}` : ` · per ${l.unit}`}</div>
     </>
   );
+  // Unit of the line. Products with a smaller unit get a dropdown (Box / Piece) that also switches the rate.
+  const prodOf = (l) => s.products.find((p) => p.id === l.pid);
+  const unitField = (l, w = '') => {
+    const prod = prodOf(l);
+    const opts = prod ? [...new Set([...unitsOf(prod), l.unit])] : [l.unit];
+    if (opts.length < 2) return <div className={cx('flex h-10 items-center text-sm text-muted', w, w.includes('h-8') && 'h-6 justify-end text-xs')}>{l.unit}</div>;
+    return (
+      <select id={`it-u-${l.idx}`} aria-label="Unit" className={cx(inputCls, w)} value={l.unit} onChange={(e) => a.setItemUnit(l.idx, e.target.value)}>
+        {opts.map((u) => <option key={u} value={u}>{u}</option>)}
+      </select>
+    );
+  };
   const qtyField = (l, w = '') => <input id={`it-q-${l.idx}`} type="number" min="1" inputMode="decimal" className={cx(inputCls, w, 'text-right tabular-nums')} value={f.items[l.idx].qty} onChange={(e) => a.setItem(l.idx, { qty: e.target.value })} />;
   const rateField = (l, w = '') => <input id={`it-r-${l.idx}`} type="number" min="0" inputMode="decimal" className={cx(inputCls, w, 'text-right tabular-nums')} value={f.items[l.idx].rate} onChange={(e) => a.setItem(l.idx, { rate: e.target.value })} />;
   const discField = (l, w = '') => <input id={`it-d-${l.idx}`} type="number" min="0" max="100" inputMode="decimal" className={cx(inputCls, w, 'text-right tabular-nums')} value={f.items[l.idx].disc} onChange={(e) => a.setItem(l.idx, { disc: e.target.value })} />;
@@ -33,7 +46,7 @@ export function DocForm() {
   );
 
   return (
-    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="grid items-start gap-6 min-[1440px]:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex min-w-0 flex-col gap-6">
         <Card className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Customer" id="f-cust" className="sm:col-span-2">
@@ -77,7 +90,8 @@ export function DocForm() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Qty" id={`it-q-${l.idx}`}>{qtyField(l)}</Field>
-                    <Field label="Rate (₹)" id={`it-r-${l.idx}`}>{rateField(l)}</Field>
+                    <Field label="Unit" id={`it-u-${l.idx}`}>{unitField(l)}</Field>
+                    <Field label={`Rate per ${l.unit} (₹)`} id={`it-r-${l.idx}`}>{rateField(l)}</Field>
                     <Field label="Disc %" id={`it-d-${l.idx}`}>{discField(l)}</Field>
                     <Field label="GST %" id={`it-g-${l.idx}`}>{gstField(l)}</Field>
                   </div>
@@ -93,32 +107,35 @@ export function DocForm() {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="text-left text-xs font-semibold text-muted">
-                  <th className="border-b border-line bg-sunken/60 px-4 py-3">Product or service</th>
-                  <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">Qty</th>
+                  <th className="border-b border-line bg-sunken/60 px-3 py-3">Product or service</th>
+                  <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">Qty · unit</th>
                   <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">Rate (₹)</th>
                   <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">Disc %</th>
                   <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">GST %</th>
-                  <th className="border-b border-line bg-sunken/60 px-2 py-3 text-right">{intra ? 'CGST + SGST' : 'IGST'}</th>
-                  <th className="border-b border-line bg-sunken/60 px-4 py-3 text-right">Amount</th>
+                  <th className="hidden border-b border-line bg-sunken/60 px-2 py-3 text-right min-[1600px]:table-cell">{intra ? 'CGST + SGST' : 'IGST'}</th>
+                  <th className="border-b border-line bg-sunken/60 px-3 py-3 text-right">Amount</th>
                   <th className="border-b border-line bg-sunken/60 px-2 py-3"><span className="sr-only">Remove</span></th>
                 </tr>
               </thead>
               <tbody>
                 {k.lines.map((l) => (
                   <tr key={l.idx} className="align-top">
-                    <td className="min-w-[220px] border-b border-line/70 px-4 py-3">
+                    <td className="min-w-[190px] border-b border-line/70 px-3 py-3">
                       <label htmlFor={`it-p-${l.idx}`} className="sr-only">Product</label>
                       {productField(l)}
                     </td>
-                    <td className="border-b border-line/70 px-2 py-3"><label htmlFor={`it-q-${l.idx}`} className="sr-only">Quantity</label>{qtyField(l, 'min-w-20')}</td>
+                    <td className="border-b border-line/70 px-2 py-3">
+                      <label htmlFor={`it-q-${l.idx}`} className="sr-only">Quantity</label>{qtyField(l, 'w-24')}
+                      <div className="mt-1.5 w-24">{unitField(l, 'h-8 w-24 text-[13px]')}</div>
+                    </td>
                     <td className="border-b border-line/70 px-2 py-3"><label htmlFor={`it-r-${l.idx}`} className="sr-only">Rate</label>{rateField(l, 'min-w-24')}</td>
-                    <td className="border-b border-line/70 px-2 py-3"><label htmlFor={`it-d-${l.idx}`} className="sr-only">Discount percent</label>{discField(l, 'min-w-[72px]')}</td>
+                    <td className="border-b border-line/70 px-2 py-3"><label htmlFor={`it-d-${l.idx}`} className="sr-only">Discount percent</label>{discField(l, 'min-w-[64px]')}</td>
                     <td className="border-b border-line/70 px-2 py-3"><label htmlFor={`it-g-${l.idx}`} className="sr-only">GST rate</label>{gstField(l, 'min-w-[84px]')}</td>
-                    <td className="border-b border-line/70 px-2 py-3 text-right tabular-nums">
+                    <td className="hidden border-b border-line/70 px-2 py-3 text-right tabular-nums min-[1600px]:table-cell">
                       <div className="pt-2.5">{inr(l.cgst + l.sgst + l.igst)}</div>
                       <div className="text-xs text-muted">{intra ? `${l.gst / 2}% + ${l.gst / 2}%` : `${l.gst}%`}</div>
                     </td>
-                    <td className="border-b border-line/70 px-4 py-3 text-right font-semibold tabular-nums"><div className="pt-2.5">{inr(l.amount)}</div></td>
+                    <td className="border-b border-line/70 px-3 py-3 text-right font-semibold tabular-nums"><div className="pt-2.5">{inr(l.amount)}</div><div className="text-xs font-normal text-muted min-[1600px]:hidden">incl. {intra ? 'CGST+SGST' : 'IGST'} {inr(l.cgst + l.sgst + l.igst)}</div></td>
                     <td className="border-b border-line/70 px-2 py-3"><IconButton icon="trash" tone="danger" label={`Remove ${l.name}`} onClick={() => a.removeItem(l.idx)} className="mt-0.5" /></td>
                   </tr>
                 ))}
@@ -136,7 +153,7 @@ export function DocForm() {
         </Card>
       </div>
 
-      <Card className="flex flex-col gap-3 p-5 xl:sticky xl:top-[calc(80px+env(safe-area-inset-top,0px))]">
+      <Card className="flex flex-col gap-3 p-5 min-[1440px]:sticky min-[1440px]:top-[calc(80px+env(safe-area-inset-top,0px))]">
         <h2 className="font-display text-lg font-semibold">Summary</h2>
         <Line k="Subtotal" v={inr(k.t.subtotal)} />
         {k.t.discount > 0 && <Line k="Discount" v={'− ' + inr(k.t.discount)} />}

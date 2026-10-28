@@ -301,7 +301,7 @@ export function prepareWrite(name, args, data) {
 
     case 'update_product': {
       const cur = findProduct(data, args.product);
-      const p = check(productSchema, { name: args.name ?? cur.name, rate: args.price ?? cur.rate, gst: args.gst_rate ?? cur.gst, hsn: args.hsn ?? cur.hsn, unit: args.unit ?? cur.unit });
+      const p = check(productSchema, { name: args.name ?? cur.name, rate: args.price ?? cur.rate, gst: args.gst_rate ?? cur.gst, hsn: args.hsn ?? cur.hsn, unit: args.unit ?? cur.unit, altUnit: cur.altUnit, altPer: cur.altPer, altRate: cur.altRate });
       const rows = [['Product', cur.name]];
       for (const [label, before, after] of [['Name', cur.name, p.name], ['Price', inr(cur.rate), inr(p.rate)], ['GST', `${cur.gst}%`, `${p.gst}%`], ['HSN/SAC', cur.hsn, p.hsn], ['Unit', cur.unit, p.unit]]) {
         if ((before || '') !== (after || '')) rows.push([label, `${before || '—'} → ${after || '—'}`]);

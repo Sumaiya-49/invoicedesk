@@ -49,6 +49,9 @@ CREATE TABLE products (
   unit VARCHAR(20) NOT NULL DEFAULT 'Nos',
   price DECIMAL(12,2) NOT NULL,
   gst_rate DECIMAL(5,2) NOT NULL,
+  alt_unit VARCHAR(20),                       -- optional smaller unit, e.g. Piece
+  alt_per_main DECIMAL(10,3),                 -- how many smaller units in one main unit, e.g. 10
+  alt_rate DECIMAL(12,2),                     -- own price per smaller unit; empty = price / alt_per_main
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

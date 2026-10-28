@@ -4,6 +4,9 @@ import { notFound } from '../errors.js';
 
 export const toProduct = (r) => ({
   id: r.id, name: r.name, hsn: r.hsn_sac || '', unit: r.unit, rate: Number(r.price), gst: Number(r.gst_rate),
+  // Optional smaller unit: 1 <unit> = altPer <altUnit>; altRate null = worked out as price ÷ altPer
+  altUnit: r.alt_unit || null, altPer: r.alt_per_main != null ? Number(r.alt_per_main) : null,
+  altRate: r.alt_rate != null ? Number(r.alt_rate) : null,
   createdAt: r.created_at || null, updatedAt: r.updated_at || null,
 });
 
@@ -20,8 +23,8 @@ export async function getProduct(userId, id) {
 
 export async function createProduct(userId, p) {
   const r = await query(
-    'INSERT INTO products (user_id, name, hsn_sac, unit, price, gst_rate, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [userId, p.name, p.hsn, p.unit, p.rate, p.gst, nowIST()]
+    'INSERT INTO products (user_id, name, hsn_sac, unit, price, gst_rate, alt_unit, alt_per_main, alt_rate, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [userId, p.name, p.hsn, p.unit, p.rate, p.gst, p.altUnit ?? null, p.altPer ?? null, p.altRate ?? null, nowIST()]
   );
   return getProduct(userId, r.insertId);
 }
@@ -29,8 +32,8 @@ export async function createProduct(userId, p) {
 export async function updateProduct(userId, id, p) {
   await getProduct(userId, id);
   await query(
-    'UPDATE products SET name = ?, hsn_sac = ?, unit = ?, price = ?, gst_rate = ?, updated_at = ? WHERE id = ? AND user_id = ?',
-    [p.name, p.hsn, p.unit, p.rate, p.gst, nowIST(), id, userId]
+    'UPDATE products SET name = ?, hsn_sac = ?, unit = ?, price = ?, gst_rate = ?, alt_unit = ?, alt_per_main = ?, alt_rate = ?, updated_at = ? WHERE id = ? AND user_id = ?',
+    [p.name, p.hsn, p.unit, p.rate, p.gst, p.altUnit ?? null, p.altPer ?? null, p.altRate ?? null, nowIST(), id, userId]
   );
   return getProduct(userId, id);
 }

@@ -3,6 +3,7 @@
 import { derive } from '../../src/lib/derive.js';
 import { r2, todayIST, monthLabel } from '../../src/lib/format.js';
 import { findCustomer, docNo, fuzzyFilter } from './lookup.js';
+import { hasAltUnit, altRateOf, conversionLabel } from '../../src/lib/units.js';
 
 const STATUS_WORDS = { partially_paid: 'part paid' };
 export const TEMPLATE_COLOURS = [['#0B6E4F', 'Emerald'], ['#3730A3', 'Indigo'], ['#9F1239', 'Maroon'], ['#334155', 'Slate'], ['#B45309', 'Saffron']];
@@ -30,7 +31,8 @@ export function runReadTool(name, args, data) {
       const found = fuzzyFilter(data.products, args.search);
       if (!found) return { note: `No product matches "${args.search}". All products: ${data.products.map((p) => p.name).join(', ')}` };
       return found
-        .map((p) => ({ name: p.name, hsn: p.hsn, unit: p.unit, price_before_gst: p.rate, gst_rate: `${p.gst}%` }));
+        .map((p) => ({ name: p.name, hsn: p.hsn, unit: p.unit, price_before_gst: p.rate, gst_rate: `${p.gst}%`,
+          ...(hasAltUnit(p) ? { also_sold_as: `${p.altUnit} (${conversionLabel(p)}) at ${altRateOf(p)} each` } : {}) }));
     }
 
     case 'search_invoices': {

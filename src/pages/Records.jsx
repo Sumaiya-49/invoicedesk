@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../store.jsx';
 import { Card, Button, IconButton, TypeBadge, Field, SectionHead, Empty, Th, Td, Icon, MobileList, MobileRow, EditedAt, inputCls, cx } from '../components/ui.jsx';
 import { useIsPhone } from '../lib/effects.js';
+import { hasAltUnit, altRateOf, conversionLabel } from '../lib/units.js';
 import { inr, fdate, TODAY, r2, monthLabel } from '../lib/format.js';
 import { EXPENSE_CATEGORIES } from '../data/seed.js';
 
@@ -165,7 +166,7 @@ export function Products() {
         {phone ? (
           <MobileList>
             {s.products.map((p) => (
-              <MobileRow key={p.id} title={p.name} sub={<>HSN/SAC {p.hsn} · per {p.unit}<EditedAt at={p.updatedAt} className="mt-1" /></>} value={inr(p.rate)} valueSub="before GST"
+              <MobileRow key={p.id} title={p.name} sub={<>HSN/SAC {p.hsn} · per {p.unit}{hasAltUnit(p) && <><br />{conversionLabel(p)} · {inr(altRateOf(p))} per {p.altUnit}</>}<EditedAt at={p.updatedAt} className="mt-1" /></>} value={inr(p.rate)} valueSub={`per ${p.unit}, before GST`}
                 meta={<span className="rounded-md border border-line bg-sunken px-2 py-0.5 text-xs font-semibold">GST {p.gst}%</span>} actions={productActions(p)} />
             ))}
           </MobileList>
@@ -178,8 +179,8 @@ export function Products() {
                 <tr key={p.id} className="hover:bg-sunken/50">
                   <Td className="font-semibold">{p.name}<EditedAt at={p.updatedAt} /></Td>
                   <Td className="tabular-nums">{p.hsn}</Td>
-                  <Td className="text-muted">{p.unit}</Td>
-                  <Td right>{inr(p.rate)}</Td>
+                  <Td className="text-muted">{p.unit}{hasAltUnit(p) && <div className="text-xs">{conversionLabel(p)}</div>}</Td>
+                  <Td right>{inr(p.rate)}<span className="text-xs text-muted"> / {p.unit}</span>{hasAltUnit(p) && <div className="text-xs text-muted">{inr(altRateOf(p))} / {p.altUnit}</div>}</Td>
                   <Td right><span className="rounded-md bg-sunken px-2 py-0.5 text-xs font-semibold">{p.gst}%</span></Td>
                   <Td right><div className="inline-flex gap-0.5">{productActions(p)}</div></Td>
                 </tr>
